@@ -1,6 +1,6 @@
 ## CODE FOR LENET ADAPTED FROM: https://blog.paperspace.com/writing-lenet5-from-scratch-in-python/
 
-# Load in relevant libraries, and alias where appropriate
+import os
 import random
 import torch
 import torch.nn as nn
@@ -9,14 +9,14 @@ import torchvision.transforms as transforms
 
 # Define relevant variables for the ML task
 class LeNet():
-    def __init__(self):
+    def __init__(self, weigths_pth = "lenet5_model.pth"):
         self.batch_size = 64
         self.num_classes = 10
         self.learning_rate = 0.001
         self.num_epochs = 10
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.seed = 42
-        self.trained_mdl_pth = "lenet5_model.pth"
+        self.trained_mdl_pth = weigths_pth
         random.seed(self.seed)
         torch.manual_seed(self.seed)
 
@@ -52,10 +52,17 @@ class LeNet():
         self.cost = nn.CrossEntropyLoss()
 
         #Setting the optimizer with the model parameters and learning rate
-        self.optimizer = torch.optim.Adam(torch_model.parameters(), lr=self.learning_rate)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
         #this is defined to print how many steps are remaining when training
         self.total_step = len(self.train_loader)
+
+        if os.path.exists(self.trained_mdl_pth):
+            self.load_model()
+        else:
+            print(f"No model file found at {self.trained_mdl_pth}.\nTraining...")
+            self.train(self.trained_mdl_pth)
+
 
     def train(self, mdl_pth = None):
         total_step = len(self.train_loader)
@@ -65,7 +72,7 @@ class LeNet():
                 labels = labels.to(self.device)
                 
                 #Forward pass
-                outputs = torch_model(images)
+                outputs = self.model(images)
                 loss = self.cost(outputs, labels)
                     
                 # Backward and optimize
@@ -79,16 +86,17 @@ class LeNet():
                 
                 # Save the trained model
                 if mdl_pth is not None:
-                    torch.save(torch_model.state_dict(), mdl_pth)
+                    torch.save(self.model.state_dict(), mdl_pth)
                     print(f"Model weights saved to {mdl_pth}")
                     self.trained_mdl_pth = mdl_pth
 
     def load_model(self, mdl_pth=None):
         mdl_pth = self.trained_mdl_pth if mdl_pth is None else mdl_pth
-        torch_model = torch_model(self.num_classes).to(self.device)
-        torch_model.load_state_dict(torch.load(self.trained_mdl_pth))
-        torch_model.eval()
+        self.model = torch_model(self.num_classes).to(self.device)
+        self.model.load_state_dict(torch.load(self.trained_mdl_pth))
+        self.model.eval()
         print("Model weights loaded successfully")
+        return
         
 
 class torch_model(nn.Module):
