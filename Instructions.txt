@@ -1,0 +1,21 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+You are in GROUP 3. Please always refer to this from now on when 
+communicating with us.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+6) Optimization Methods for Adversarial Attacks
+
+- analyze in depth the theory of the papers (FW.pdf, FW_variants.pdf, 
+FW_survey.pdf)
+
+GROUP of 2 STUDENTS:
+- develop the codes for the following algorithms:  Frank-Wolfe, 
+Pairwise Frank-Wolfe, Away-Step Frank-Wolfe; please use suitable tools 
+to make the code efficient (e.g., line search, LMO,...).
+- test the algorithms on the Adversarial-Attack problem  (Section 3.5   
+in FW_survey.pdf) using 3 Real-World datasets (suitably choose the 
+data you like the most) follow the lines of attacks.pdf (section 5 - 
+WB attacks)
+-analize the results using plots and tables
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
