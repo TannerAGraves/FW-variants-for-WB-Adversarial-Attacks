@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 
 # Define relevant variables for the ML task
 class LeNet():
-    def __init__(self, weigths_pth = "lenet5_model.pth"):
+    def __init__(self, weigths_pth = "models/lenet5_model.pth"):
         self.batch_size = 64
         self.num_classes = 10
         self.learning_rate = 0.001
@@ -85,10 +85,24 @@ class LeNet():
                                 .format(epoch+1, self.num_epochs, i+1, total_step, loss.item()))
                 
                 # Save the trained model
-                if mdl_pth is not None:
-                    torch.save(self.model.state_dict(), mdl_pth)
-                    print(f"Model weights saved to {mdl_pth}")
-                    self.trained_mdl_pth = mdl_pth
+        if mdl_pth is not None:
+            torch.save(self.model.state_dict(), mdl_pth)
+            print(f"Model weights saved to {mdl_pth}")
+            self.trained_mdl_pth = mdl_pth
+    
+    def test(self):
+        with torch.no_grad(): # note this should not be left on for WB attacks
+            correct = 0
+            total = 0
+            for images, labels in self.test_loader:
+                images = images.to(self.device)
+                labels = labels.to(self.device)
+                outputs = self.model(images)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+            print('Accuracy of the network on the 10000 test images: {} %'.format(100 * correct / total))
 
     def load_model(self, mdl_pth=None):
         mdl_pth = self.trained_mdl_pth if mdl_pth is None else mdl_pth
