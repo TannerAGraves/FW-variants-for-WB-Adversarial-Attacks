@@ -30,3 +30,8 @@ this focuses on a single coordinate at a time.
 Projects gradient onto $L_2$ ball.
 - $L_\infty$: $v_t = \epsilon \cdot \text{sign}(\nabla f(x_t))$  
 Subproblem becomes instance of Fast Signed Gradient Problem (FGSM). But frank-wolfe creates convex combination.
+
+# Supp. Paper: Attacks - A Frank-Wolfe Framework for Efficient and Effective Adversarial Attacks
+- states that momentum leads to faster convergence
+- problem is not convex, so cannot use grad magnitude as convergence criteria
+- need to use dual gap as convergence criteria
