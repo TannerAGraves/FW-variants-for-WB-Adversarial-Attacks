@@ -46,6 +46,7 @@ INPUT c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/tfm/public/cm/cmsy8.
 INPUT c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/tfm/public/cm/cmsy6.tfm
 INPUT c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/tfm/public/cm/cmr12.tfm
 INPUT c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm
+INPUT c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm
 OUTPUT report_scratch.pdf
 INPUT c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map
 INPUT report_scratch.aux
