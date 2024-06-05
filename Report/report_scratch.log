@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.2.27)  5 JUN 2024 13:02
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.2.27)  5 JUN 2024 13:05
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -75,9 +75,9 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <6> on input line 11.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 29.
+(Font)              <7> on input line 30.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <5> on input line 29.
+(Font)              <5> on input line 30.
  [1
 
 {c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2] (./report_scratch.aux)
@@ -95,7 +95,7 @@ Here is how much of TeX's memory you used:
  14 hyphenation exceptions out of 8191
  57i,6n,65p,458b,199s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb><c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb><c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb><c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb><c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/Users/JIC/AppData/Roaming/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
-Output written on report_scratch.pdf (2 pages, 106192 bytes).
+Output written on report_scratch.pdf (2 pages, 106336 bytes).
 PDF statistics:
  56 PDF objects out of 1000 (max. 8388607)
  33 compressed objects within 1 object stream
