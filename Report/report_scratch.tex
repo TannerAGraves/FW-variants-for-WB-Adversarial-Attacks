@@ -34,7 +34,7 @@ Create plot showing how accurate attacks are with different $\epsilon$ constrain
 The constrained nature of the Adversarial Attack problem means that the norm of the gradient $||\nabla_x f(x)||$ is not a sutible convergence criterion as boundry points need not have $0$ gradient. 
 The Frank-Wolfe gap provides provides measure of both optimality and point feasibility. It is a measure of the maximum improvement over the current iteration $x_t$ within the constraints $C$ and defined
 $$g(x_t) = \max_{x\in C} \langle x - x_t, -\nabla f(x_t)\rangle$$
-We always have $g(x_t) \geq 0$ and  its usefullness as a convergence criterion comes from $g(x_t) = 0$ iff $x_t$ is a stationary point. 
+We always have $g(x_t) \geq 0$ and its usefullness as a convergence criterion comes from $g(x_t) = 0$ iff $x_t$ is a stationary point. 
 % See what the slides say about stationary points
 For convex problems, we would have that the linear approximation $f(x_t) + \langle x_t - x, -\nabla f(x_t) \rangle \geq f(x)$. However, the loss of DNNs as commnly the subject of adversarial attacks, are highly non-convex, making this only true locally. This complicate the convergence of Frank-Wolfe in this application, but it is still gaurenteed.
 
