@@ -41,6 +41,8 @@ class simple_FashionMNIST():
         # Similarly, load the Fashion MNIST test dataset.
         self.testset = torchvision.datasets.FashionMNIST(root='./data', train=False, download=True, transform=transform)
         self.testloader = torch.utils.data.DataLoader(self.testset, batch_size=1, shuffle=False, num_workers=2)
+        # dataset is nicely 0-1 scaled so we don't need to scale it when performing the attack
+        self.requires_denorm = False
 
         # Define the class labels for the Fashion MNIST dataset.
         self.classes = ('T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 
