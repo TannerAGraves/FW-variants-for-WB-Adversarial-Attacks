@@ -1,7 +1,7 @@
 \documentclass{article}
 \usepackage{graphicx} % Required for inserting images
-\usepackage{algorithm}
-\usepackage{algpseudocode}
+%\usepackage{algorithm}
+%\usepackage{algpseudocode}
 %\usepackage{mathrsfs}
 
 \title{Comparison of Frank-Wolfe Varients for White-Box Adversarial Attacks}
@@ -25,9 +25,11 @@ Type of Norms
 \section{Results}
 Introduce Datasets
 \subsection{Momentum}
-\subsection{Early-Stopping}
-\subsection{LMO vs. Linesearch}
-I really don't want to implement linesearch. As it is a waste of time when LMO is cheap but if we need easy content we can do this section.
+\subsection{Early-Stopping (Convergece Criterion)}
+It is worth noting that Convergence Criterion For Frank-Wolfe is a somewhat imprecise surrogate for success in the context of adversarial attacks. For many examples, we find that Frank-Wolfe methods create successful attacks several iterations before convergence. We attribute this to an incorrect class probability being grater than the correct class being sufficient for success where convergence is reached when the new output class probability is maximized. 
+We observe the convergence of the Frank-Wolfe gap 
+\subsection{Stepsize}
+The methods for stepsize where implemented: fixed, where $\gamma_t = 1$ for all $t$, linesearching which solves $\arg \min _\gamma f(x + \gamma d_t)$ where $\gamma \in (0,1]$, and decaying stepsize $\gamma_t = \frac{2}{t + 2}$.
 \subsection{$\epsilon$ Choice}
 Create plot showing how accurate attacks are with different $\epsilon$ constraints.
 \section{Convergence Analysis}
