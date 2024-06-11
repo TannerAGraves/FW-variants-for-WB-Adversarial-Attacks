@@ -110,7 +110,7 @@ class LeNet():
             print('Accuracy of the network on the 10000 test images: {} %'.format(100 * correct / total))
     
     # restores the tensors to their original scale
-    def denorm(self, batch, mean=[0.1307], std=[0.3081]):
+    def denorm(self, batch):
         """
         Convert a batch of tensors to their original scale.
 
