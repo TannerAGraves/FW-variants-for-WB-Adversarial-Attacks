@@ -19,6 +19,9 @@ class LeNet():
         self.trained_mdl_pth = weigths_pth
         random.seed(self.seed)
         torch.manual_seed(self.seed)
+        self.requires_denorm = True
+        self.mean = [0.1307]
+        self.std = [0.3081]
         
         self.transform=transforms.Compose([
                     transforms.ToTensor(),
@@ -50,7 +53,7 @@ class LeNet():
 
 
         # MNIST Test dataset and dataloader declaration
-        test_loader = torch.utils.data.DataLoader(
+        self.testloader = torch.utils.data.DataLoader(
             datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
                     transforms.ToTensor(),
                     transforms.Normalize((0.1307,), (0.3081,)),
@@ -64,16 +67,6 @@ class LeNet():
 
         # #Setting the optimizer with the model parameters and learning rate
         # self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
-
-        # #this is defined to print how many steps are remaining when training
-        # self.total_step = len(self.train_loader)
-
-        # if os.path.exists(self.trained_mdl_pth):
-        #     self.load_model()
-        # else:
-        #     raise Exception("Model weights not found {self.trained_mdl_pth}")
-            # print(f"No model file found at {self.trained_mdl_pth}.\nTraining...")
-            # self.train(self.trained_mdl_pth)
 
 
     # def train(self, mdl_pth = None):
@@ -115,16 +108,29 @@ class LeNet():
                 correct += (predicted == labels).sum().item()
 
             print('Accuracy of the network on the 10000 test images: {} %'.format(100 * correct / total))
+    
+    # restores the tensors to their original scale
+    def denorm(self, batch, mean=[0.1307], std=[0.3081]):
+        """
+        Convert a batch of tensors to their original scale.
 
-    # def load_model(self, mdl_pth=None):
-    #     mdl_pth = self.trained_mdl_pth if mdl_pth is None else mdl_pth
-    #     # Load the pretrained model
-    #     self.model = torch_model(self.num_classes).to(self.device)
-    #     #self.model.load_state_dict(torch.load(self.trained_mdl_pth))
-    #     self.model.load_state_dict(torch.load(mdl_pth, map_location=self.device))
-    #     self.model.eval()
-    #     print("Model weights loaded successfully")
-    #     return
+        Args:
+            batch (torch.Tensor): Batch of normalized tensors.
+            mean (torch.Tensor or list): Mean used for normalization.
+            std (torch.Tensor or list): Standard deviation used for normalization.
+
+        Returns:
+            torch.Tensor: batch of tensors without normalization applied to them.
+        """
+        mean, std = self.mean, self.std
+        if isinstance(mean, list):
+            mean = torch.tensor(mean).to(self.device)
+        if isinstance(std, list):
+            std = torch.tensor(std).to(self.device)
+        return batch * std.view(1, -1, 1, 1) + mean.view(1, -1, 1, 1)
+    
+    def renorm(self, batch):
+        return transforms.Normalize(tuple(self.mean), tuple(self.std))(batch).detach()
         
 
 # LeNet Model definition
