@@ -32,15 +32,9 @@ class simple_FashionMNIST():
         # transform applies the defined transformations to the images.
         trainset = torchvision.datasets.FashionMNIST(root='./data', train=True, download=True, transform=transform)
 
-        # Create a data loader for the training set.
-        # It will provide batches of data, in this case, batches of size 4.
-        # shuffle=True ensures that the data is shuffled at the start of each epoch.
-        # num_workers=2 indicates that two subprocesses will be used for data loading.
-        trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
-
         # Similarly, load the Fashion MNIST test dataset.
         self.testset = torchvision.datasets.FashionMNIST(root='./data', train=False, download=True, transform=transform)
-        self.testloader = torch.utils.data.DataLoader(self.testset, batch_size=1, shuffle=False, num_workers=2)
+        self.testloader = torch.utils.data.DataLoader(self.testset, batch_size=1, shuffle=False)
         # dataset is nicely 0-1 scaled so we don't need to scale it when performing the attack
         self.requires_denorm = False
 
@@ -94,6 +88,10 @@ class simple_FashionMNIST():
                 
                 # Update the model parameters
                 self.optimizer.step()
+    def denorm(self, batch):
+        return batch
+    def renorm(self, batch):
+        return batch.detach()
 
 class BasicCNN(nn.Module):
     def __init__(self):
