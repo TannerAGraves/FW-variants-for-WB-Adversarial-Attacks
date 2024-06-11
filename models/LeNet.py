@@ -4,8 +4,8 @@ import os
 import random
 import torch
 import torch.nn as nn
-import torchvision
-import torchvision.transforms as transforms
+import torch.nn.functional as F
+from torchvision import datasets, transforms
 
 # Define relevant variables for the ML task
 class LeNet():
@@ -19,76 +19,88 @@ class LeNet():
         self.trained_mdl_pth = weigths_pth
         random.seed(self.seed)
         torch.manual_seed(self.seed)
+        
+        self.transform=transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.1307,), (0.3081,)),
+                    ])
 
         #Loading the dataset and preprocessing
-        self.train_dataset = torchvision.datasets.MNIST(root = './data',
-                                                train = True,
-                                                transform = transforms.Compose([
-                                                        transforms.Resize((32,32)),
-                                                        transforms.ToTensor(),
-                                                        transforms.Normalize(mean = (0.1307,), std = (0.3081,))]),
-                                                download = True)
+        # self.train_dataset = torchvision.datasets.MNIST(root = './data',
+        #                                         train = True,
+        #                                         transform = transforms.Compose([
+        #                                                 transforms.Resize((32,32)),
+        #                                                 transforms.ToTensor(),
+        #                                                 transforms.Normalize(mean = (0.1307,), std = (0.3081,))]),
+        #                                         download = True)
 
 
-        self.test_dataset = torchvision.datasets.MNIST(root = './data',
-                                                train = False,
-                                                transform = transforms.Compose([
-                                                        transforms.Resize((32,32)),
-                                                        transforms.ToTensor(),
-                                                        transforms.Normalize(mean = (0.1325,), std = (0.3105,))]),
-                                                download=True)
+        # self.test_dataset = torchvision.datasets.MNIST(root = './data',
+        #                                         train = False,
+        #                                         transform = transforms.Compose([
+        #                                                 transforms.Resize((32,32)),
+        #                                                 transforms.ToTensor(),
+        #                                                 transforms.Normalize(mean = (0.1325,), std = (0.3105,))]),
+        #                                         download=True)
 
 
-        self.train_loader = torch.utils.data.DataLoader(dataset = self.train_dataset,
-                                                batch_size = self.batch_size,
-                                                shuffle = True)
+        # self.train_loader = torch.utils.data.DataLoader(dataset = self.train_dataset,
+        #                                         batch_size = self.batch_size,
+        #                                         shuffle = True)
 
 
-        self.test_loader = torch.utils.data.DataLoader(dataset = self.test_dataset,
-                                                batch_size = self.batch_size,
-                                                shuffle = True)
+        # MNIST Test dataset and dataloader declaration
+        test_loader = torch.utils.data.DataLoader(
+            datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.1307,), (0.3081,)),
+                    ])),
+                batch_size=1, shuffle=True)
         
-        self.model = torch_model(self.num_classes).to(self.device)
+        self.model = torch_model().to(self.device)
+        self.model.load_state_dict(torch.load(self.trained_mdl_pth, map_location=self.device))
+        self.model.eval()
         self.cost = nn.CrossEntropyLoss()
 
-        #Setting the optimizer with the model parameters and learning rate
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        # #Setting the optimizer with the model parameters and learning rate
+        # self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
 
-        #this is defined to print how many steps are remaining when training
-        self.total_step = len(self.train_loader)
+        # #this is defined to print how many steps are remaining when training
+        # self.total_step = len(self.train_loader)
 
-        if os.path.exists(self.trained_mdl_pth):
-            self.load_model()
-        else:
-            print(f"No model file found at {self.trained_mdl_pth}.\nTraining...")
-            self.train(self.trained_mdl_pth)
+        # if os.path.exists(self.trained_mdl_pth):
+        #     self.load_model()
+        # else:
+        #     raise Exception("Model weights not found {self.trained_mdl_pth}")
+            # print(f"No model file found at {self.trained_mdl_pth}.\nTraining...")
+            # self.train(self.trained_mdl_pth)
 
 
-    def train(self, mdl_pth = None):
-        total_step = len(self.train_loader)
-        for epoch in range(self.num_epochs):
-            for i, (images, labels) in enumerate(self.train_loader):  
-                images = images.to(self.device)
-                labels = labels.to(self.device)
+    # def train(self, mdl_pth = None):
+    #     total_step = len(self.train_loader)
+    #     for epoch in range(self.num_epochs):
+    #         for i, (images, labels) in enumerate(self.train_loader):  
+    #             images = images.to(self.device)
+    #             labels = labels.to(self.device)
                 
-                #Forward pass
-                outputs = self.model(images)
-                loss = self.cost(outputs, labels)
+    #             #Forward pass
+    #             outputs = self.model(images)
+    #             loss = self.cost(outputs, labels)
                     
-                # Backward and optimize
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
+    #             # Backward and optimize
+    #             self.optimizer.zero_grad()
+    #             loss.backward()
+    #             self.optimizer.step()
                         
-                if (i+1) % 400 == 0:
-                    print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
-                                .format(epoch+1, self.num_epochs, i+1, total_step, loss.item()))
+    #             if (i+1) % 400 == 0:
+    #                 print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}' 
+    #                             .format(epoch+1, self.num_epochs, i+1, total_step, loss.item()))
                 
-                # Save the trained model
-        if mdl_pth is not None:
-            torch.save(self.model.state_dict(), mdl_pth)
-            print(f"Model weights saved to {mdl_pth}")
-            self.trained_mdl_pth = mdl_pth
+    #             # Save the trained model
+    #     if mdl_pth is not None:
+    #         torch.save(self.model.state_dict(), mdl_pth)
+    #         print(f"Model weights saved to {mdl_pth}")
+    #         self.trained_mdl_pth = mdl_pth
     
     def test(self):
         with torch.no_grad(): # note this should not be left on for WB attacks
@@ -104,41 +116,42 @@ class LeNet():
 
             print('Accuracy of the network on the 10000 test images: {} %'.format(100 * correct / total))
 
-    def load_model(self, mdl_pth=None):
-        mdl_pth = self.trained_mdl_pth if mdl_pth is None else mdl_pth
-        self.model = torch_model(self.num_classes).to(self.device)
-        self.model.load_state_dict(torch.load(self.trained_mdl_pth))
-        self.model.eval()
-        print("Model weights loaded successfully")
-        return
+    # def load_model(self, mdl_pth=None):
+    #     mdl_pth = self.trained_mdl_pth if mdl_pth is None else mdl_pth
+    #     # Load the pretrained model
+    #     self.model = torch_model(self.num_classes).to(self.device)
+    #     #self.model.load_state_dict(torch.load(self.trained_mdl_pth))
+    #     self.model.load_state_dict(torch.load(mdl_pth, map_location=self.device))
+    #     self.model.eval()
+    #     print("Model weights loaded successfully")
+    #     return
         
 
+# LeNet Model definition
 class torch_model(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self):
         super(torch_model, self).__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 6, kernel_size=5, stride=1, padding=0),
-            nn.BatchNorm2d(6),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size = 2, stride = 2))
-        self.layer2 = nn.Sequential(
-            nn.Conv2d(6, 16, kernel_size=5, stride=1, padding=0),
-            nn.BatchNorm2d(16),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size = 2, stride = 2))
-        self.fc = nn.Linear(400, 120)
-        self.relu = nn.ReLU()
-        self.fc1 = nn.Linear(120, 84)
-        self.relu1 = nn.ReLU()
-        self.fc2 = nn.Linear(84, num_classes)
-        
+        self.conv1 = nn.Conv2d(1, 32, 3, 1)
+        self.conv2 = nn.Conv2d(32, 64, 3, 1)
+        self.dropout1 = nn.Dropout(0.25)
+        self.dropout2 = nn.Dropout(0.5)
+        self.fc1 = nn.Linear(9216, 128)
+        self.fc2 = nn.Linear(128, 10)
+
     def forward(self, x):
-        out = self.layer1(x)
-        out = self.layer2(out)
-        out = out.reshape(out.size(0), -1)
-        out = self.fc(out)
-        out = self.relu(out)
-        out = self.fc1(out)
-        out = self.relu1(out)
-        out = self.fc2(out)
-        return out
+        x = self.conv1(x)
+        x = F.relu(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout1(x)
+        x = torch.flatten(x, 1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout2(x)
+        x = self.fc2(x)
+        output = F.log_softmax(x, dim=1)
+        return output
+
+
+
