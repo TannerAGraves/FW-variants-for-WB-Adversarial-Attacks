@@ -302,28 +302,39 @@ def test_fw(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='
                 if len(adv_examples) < 5:
                     adv_ex = perturbed_image.squeeze().detach().cpu().numpy()
                     adv_examples.append( (init_pred.item(), final_pred.item(), adv_ex) )
-                #break # early stopping if attack sucessful, paper doesn't use this so I wont.
+            if (early_stopping == 'pred') and first_success:
+                # The attack was successful so the classification was not correct
+                stop = True
+                stop_reason = 'pred'
+            elif (early_stopping == 'gap_FW') and (gap_FW < gap_FW_tol):
+                if not success: # attack failed
+                    correct +=1
+                stop = True
+                stop_reason = 'gap'
+            elif (t == num_fw_iter - 1): # Stop condition: Hit max FW iters
+                stop = True
+                stop_reason = 'max_iter'
+                if not success: # attack failed
+                    correct +=1
+            else:
+                # no stop criteria met, continue
+                stop = False
+                stop_reason = None
             hist_iter = {
                 'example_idx':ex_num,
                 'FW_iter': t + 1, # original example is 0
                 'gap_FW': gap_FW if gap_FW is not None else None,
                 'success': success,
-                'first_success': first_success
+                'first_success': first_success, 
+                'target': target.item(),
+                'pred': final_pred.item(),
+                'stop_cond': stop_reason 
             }
             if info is not None:
                 hist_iter.update(info) # some methods output dict containing info at each step
             hist.append(hist_iter)
-            if (early_stopping == 'pred') and first_success:
-                # The attack was successful so the classification was not correct
+            if stop:
                 break
-            elif (early_stopping == 'gap_FW') and (gap_FW < gap_FW_tol):
-                if not success: # attack failed
-                    correct +=1
-                break
-            elif (t == num_fw_iter - 1): # Stop condition: Hit max FW iters
-                if not success: # attack failed
-                    correct +=1
-
         ex_num += 1
         if ex_num >= num_test: # limit test set for speed
             break
