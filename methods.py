@@ -73,19 +73,8 @@ def fw_step_momentum(x_t, epsilon, g_t, m_t_last, x0, stepsize_method, momentum 
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     return perturbed_image, m_t, gap_FW
 
-def fw_step_momentum1(x_t, epsilon, g_t, m_t_last, x0, momentum = 0.2,fw_stepsize = 1):
-    # alg from attacks.pdf
-    m_t = (1 - momentum)*g_t
-    if m_t_last is not None:
-        m_t += momentum*m_t_last
-    m_t_sign = m_t.sign()
-    v_t = -epsilon * m_t_sign + x0
-    d_t = v_t - x_t
-    perturbed_image = x_t - momentum * epsilon * m_t_sign - momentum * (x_t - x0)#x_t + fw_stepsize * d_t
-    perturbed_image = torch.clamp(perturbed_image, 0, 1)
-    return perturbed_image, m_t
 
-def fw_step_away(x_t, epsilon, g_t, x0, S_t):
+def fw_step_away(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_remove_tol = 0.01):
     info = {}
     # alg from FW_varients.pdf
     # FW direction
@@ -109,23 +98,42 @@ def fw_step_away(x_t, epsilon, g_t, x0, S_t):
 
     
     # check which direction is closer to the gradient
-    if gap_FW >= gap_AWAY:
+    if (gap_FW >= gap_AWAY) or (len(S_t) == 1):
         info['step'] = 'FW'
         info['S_idx'] = -1 #idicate last vertex is S_t is used which is the current FW direction
         d_t = d_t_FW
         max_step = 1
         S_t.append(d_t.clone().detach())
+        A_t.append(max_step)
     else:
         info['step'] = 'AS'
         info['S_idx'] = v_t_idx
         d_t = d_t_AWAY
-        alpha_v_t = 0.1 # REMOVE ME or implement line searching or solve system to get alpha coeffs
-        max_step = 0.1 #alpha_v_t / (1 - alpha_v_t) # this is a safe step size to remain in C. Need to verify this
+        alpha_v_t = A_t[v_t_idx]
+        max_step = 1 if alpha_v_t == 1 else alpha_v_t / (1 - alpha_v_t) # avoid divide by zero when alpha = 1
+    
+    # determine stepsize according to rule
+    if stepsize_method.strat == 'ls':
+        fw_stepsize = stepsize_method.stepsize_linesearch(x_t, d_t)
+    else:
+        fw_stepsize = stepsize_method.stepsize
+    # clip stepsize according to rule to max_step as defined above
+    fw_stepsize = min(fw_stepsize, max_step)
+    
+    if info['step'] == 'AS':
+        #adjust the alpha value if doing away step
+        A_t[v_t_idx] -= fw_stepsize
 
+    # check if directions need to be removed from the active set
+    remove_idx = list(np.where(np.array(A_t) < alpha_remove_tol))
+    info['removed'] = remove_idx
+    S_t = [s_k for s_k, a_k in zip(S_t, A_t) if a_k >= alpha_remove_tol]
+    A_t = [a_k for a_k in A_t if a_k >= alpha_remove_tol]
+    info['alphas'] = A_t
     # line-search for the best gamma (FW stepsize)
     perturbed_image = x_t + max_step * d_t
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
-    return perturbed_image, S_t, info
+    return perturbed_image, gap_FW, S_t, A_t, info
 
 
 def fw_step_pairwise():
@@ -231,6 +239,7 @@ def test_fw(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='
         had_first_success = False
         gap_FW = None
         S_t = [x0_denorm]
+        A_t = [1]
         info = None
         criterion = AdversarialLoss(10)
         stepsize_method = stepsize(model, fw_stepsize_rule, ls_criterion=criterion, ls_target=target)
@@ -272,8 +281,8 @@ def test_fw(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='
                 perturbed_image, gap_FW = fw_step(x_t_denorm, epsilon, x_t_grad, x0_denorm, stepsize_method=stepsize_method)
             elif method == 'fw_altgap':
                 perturbed_image, gap_FW = fw_step_altgap(x_t_denorm, epsilon, x_t_grad, x0_denorm, stepsize_method=stepsize_method)
-            elif method == 'fw_AWAY':
-                perturbed_image, S_t, info = fw_step_away(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t)
+            elif method == 'fw_away':
+                perturbed_image, gap_FW, S_t, A_t, info = fw_step_away(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
             elif method == 'fw_momentum':
                 perturbed_image, m_t_last, gap_FW = fw_step_momentum(x_t_denorm, epsilon, x_t_grad, m_t_last, x0_denorm, stepsize_method=stepsize_method)
             # Reapply normalization
