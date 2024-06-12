@@ -21,10 +21,12 @@ def fw_step(x_t, epsilon, g_t, x0, stepsize_method):
     g_t_sign = g_t.sign()
     v_t = -epsilon * g_t_sign + x0
     d_t = v_t - x_t
+    info = {}
 
     # determine stepsize
     if stepsize_method.strat == 'ls':
         fw_stepsize = stepsize_method.stepsize_linesearch(x_t, d_t)
+        info['stepsize'] = fw_stepsize
     else:
         fw_stepsize = stepsize_method.stepsize
 
@@ -32,26 +34,7 @@ def fw_step(x_t, epsilon, g_t, x0, stepsize_method):
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     #gap_FW = torch.sum(d_t * g_t).item()#torch.dot(d_t, g_t)
     gap_FW = torch.sum(-d_t * g_t).item()
-    return perturbed_image, gap_FW
-
-def fw_step_altgap(x_t, epsilon, g_t, x0, stepsize_method):
-    # alg from attacks.pdf. Modified to remove momentum.
-    g_t_sign = g_t.sign()
-    v_t = -epsilon * g_t_sign + x0
-    d_t = v_t - x_t
-
-    # determine stepsize
-    if stepsize_method.strat == 'ls':
-        fw_stepsize = stepsize_method.stepsize_linesearch(x_t, d_t)
-    else:
-        fw_stepsize = stepsize_method.stepsize
-
-    perturbed_image = x_t + fw_stepsize * d_t
-    perturbed_image = torch.clamp(perturbed_image, 0, 1)
-    #gap_FW = torch.sum(d_t * g_t).item()#torch.dot(d_t, g_t)
-    #gap_FW = torch.sum(-d_t * g_t).item()
-    gap_FW = torch.sum(-(perturbed_image - x_t)*g_t).item()
-    return perturbed_image, gap_FW
+    return perturbed_image, gap_FW, info
 
 def fw_step_momentum(x_t, epsilon, g_t, m_t_last, x0, stepsize_method, momentum = 0.2):
     # alg from attacks.pdf
@@ -131,7 +114,7 @@ def fw_step_away(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_remove_
     A_t = [a_k for a_k in A_t if a_k >= alpha_remove_tol]
     info['alphas'] = A_t
     # line-search for the best gamma (FW stepsize)
-    perturbed_image = x_t + max_step * d_t
+    perturbed_image = x_t + fw_stepsize * d_t
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     return perturbed_image, gap_FW, S_t, A_t, info
 
@@ -205,18 +188,48 @@ class stepsize():
         self.stepsize = 2 / (t + 2)
         return
 
+    # def stepsize_linesearch(self, x_t, d_t):
+    #     x_tc = x_t.clone().detach()
+    #     d_tc = d_t.clone().detach()
+    #     losses = []
+    #     with torch.no_grad():
+    #         steps = [(i + 1) / self.ls_num_samples for i in range(self.ls_num_samples)]
+    #         for step in steps:
+    #             output = self.model(x_tc + step * d_tc)
+    #             losses.append(self.ls_criterion(output, self.ls_target))
+    #     best_idx = np.argmin(losses) # check if this is min or max
+    #     self.stepsize = steps[best_idx]
+    #     return self.stepsize
+
     def stepsize_linesearch(self, x_t, d_t):
         x_tc = x_t.clone().detach()
         d_tc = d_t.clone().detach()
-        losses = []
+        
         with torch.no_grad():
-            steps = [(i + 1) / self.ls_num_samples for i in range(self.ls_num_samples)]
-            for step in steps:
-                output = self.model(x_tc + step * d_tc)
-                losses.append(self.ls_criterion(output, self.ls_target))
-        best_idx = np.argmin(losses) # check if this is min or max
-        self.stepsize = steps[best_idx]
+            # Create a batch of perturbed examples
+            steps = torch.linspace(1/self.ls_num_samples, 1, self.ls_num_samples).view(-1, 1, 1, 1)  # Assuming x_t is a 4D tensor (batch_size, channels, height, width)
+            perturbed_batch = x_tc.unsqueeze(0) + steps * d_tc.unsqueeze(0)
+            
+            # Flatten the batch to combine the batch dimension with the sample dimension
+            perturbed_batch = perturbed_batch.view(-1, *x_tc.shape[1:])
+            
+            # Get model outputs for the entire batch
+            outputs = self.model(perturbed_batch)
+            
+            # Reshape outputs to separate the sample dimension
+            outputs = outputs.view(self.ls_num_samples, -1, *outputs.shape[1:])
+            
+            # Calculate losses for each perturbed example
+            losses = torch.zeros(self.ls_num_samples)
+            for i in range(self.ls_num_samples):
+                losses[i] = self.ls_criterion(outputs[i], self.ls_target)
+
+        # Find the step size that gives the minimum loss
+        best_idx = torch.argmin(losses).item()
+        self.stepsize = steps[best_idx].item()
+        
         return self.stepsize
+
 
 def test_fw(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw', early_stopping = None, fw_stepsize_rule = 1, gap_FW_tol = 0.05):
     testloader = target_model.testloader
@@ -278,13 +291,11 @@ def test_fw(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='
             if method == 'fgsm':
                 perturbed_image = fgsm_attack(x_t_denorm, epsilon, x_t_grad)
             elif method == 'fw':
-                perturbed_image, gap_FW = fw_step(x_t_denorm, epsilon, x_t_grad, x0_denorm, stepsize_method=stepsize_method)
-            elif method == 'fw_altgap':
-                perturbed_image, gap_FW = fw_step_altgap(x_t_denorm, epsilon, x_t_grad, x0_denorm, stepsize_method=stepsize_method)
-            elif method == 'fw_away':
-                perturbed_image, gap_FW, S_t, A_t, info = fw_step_away(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
+                perturbed_image, gap_FW, info = fw_step(x_t_denorm, epsilon, x_t_grad, x0_denorm, stepsize_method=stepsize_method)
             elif method == 'fw_momentum':
                 perturbed_image, m_t_last, gap_FW = fw_step_momentum(x_t_denorm, epsilon, x_t_grad, m_t_last, x0_denorm, stepsize_method=stepsize_method)
+            elif method == 'fw_away':
+                perturbed_image, gap_FW, S_t, A_t, info = fw_step_away(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
             # Reapply normalization
             x_t = target_model.renorm(perturbed_image)#transforms.Normalize((0.1307,), (0.3081,))(perturbed_image).detach()
 
