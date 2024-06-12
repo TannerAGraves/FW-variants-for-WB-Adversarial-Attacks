@@ -22,35 +22,12 @@ def fw_step(x_t, epsilon, g_t, x0, stepsize_method):
     v_t = -epsilon * g_t_sign + x0
     d_t = v_t - x_t
 
-    # determine stepsize
-    if stepsize_method.strat == 'ls':
-        fw_stepsize = stepsize_method.stepsize_linesearch(x_t, d_t)
-    else:
-        fw_stepsize = stepsize_method.stepsize
+    fw_stepsize = stepsize_method.get_stepsize(x_t, d_t)
 
     perturbed_image = x_t + fw_stepsize * d_t
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     #gap_FW = torch.sum(d_t * g_t).item()#torch.dot(d_t, g_t)
     gap_FW = torch.sum(-d_t * g_t).item()
-    return perturbed_image, gap_FW
-
-def fw_step_altgap(x_t, epsilon, g_t, x0, stepsize_method):
-    # alg from attacks.pdf. Modified to remove momentum.
-    g_t_sign = g_t.sign()
-    v_t = -epsilon * g_t_sign + x0
-    d_t = v_t - x_t
-
-    # determine stepsize
-    if stepsize_method.strat == 'ls':
-        fw_stepsize = stepsize_method.stepsize_linesearch(x_t, d_t)
-    else:
-        fw_stepsize = stepsize_method.stepsize
-
-    perturbed_image = x_t + fw_stepsize * d_t
-    perturbed_image = torch.clamp(perturbed_image, 0, 1)
-    #gap_FW = torch.sum(d_t * g_t).item()#torch.dot(d_t, g_t)
-    #gap_FW = torch.sum(-d_t * g_t).item()
-    gap_FW = torch.sum(-(perturbed_image - x_t)*g_t).item()
     return perturbed_image, gap_FW
 
 def fw_step_momentum(x_t, epsilon, g_t, m_t_last, x0, stepsize_method, momentum = 0.2):
@@ -62,11 +39,7 @@ def fw_step_momentum(x_t, epsilon, g_t, m_t_last, x0, stepsize_method, momentum 
     v_t = -epsilon * m_t_sign + x0
     d_t = v_t - x_t
 
-    # determine stepsize
-    if stepsize_method.strat == 'ls':
-        fw_stepsize = stepsize_method.stepsize_linesearch(x_t, d_t)
-    else:
-        fw_stepsize = stepsize_method.stepsize
+    fw_stepsize = stepsize_method.get_stepsize(x_t, d_t)
 
     gap_FW = torch.sum(-d_t * g_t).item()
     perturbed_image = x_t + fw_stepsize * d_t
@@ -145,7 +118,7 @@ def fw_step_away(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, debug = True)
     gap_AWAY = torch.sum(-g_t*d_t_AWAY).item()
     info['gap_FW'] = gap_FW
     info['gap_AS'] = gap_AWAY
-    info['gap_ASmax'] = torch.sum(g_t*(x_t - S_t[np.argmax(away_costs)])).item()
+    #info['gap_ASmax'] = torch.sum(g_t*(x_t - S_t[np.argmax(away_costs)])).item()
 
     
     # check which direction is closer to the gradient
@@ -161,12 +134,7 @@ def fw_step_away(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, debug = True)
     info['step_type'] = step_type
     info['max_step'] = max_step
     # determine stepsize according to rule
-    if stepsize_method.strat == 'ls':
-        fw_stepsize = stepsize_method.stepsize_linesearch(x_t, d_t)
-    else:
-        fw_stepsize = stepsize_method.stepsize
-    # clip stepsize according to rule to max_step as defined above
-    fw_stepsize = min(fw_stepsize, max_step)
+    fw_stepsize = stepsize_method.get_stepsize(x_t, d_t, max_step)
     info['stepsize'] = fw_stepsize
     
     S_t, A_t, update_info = update_active_away(fw_stepsize, max_step, S_t, A_t, s_t, v_t_idx, step_type, epsilon, debug=debug)
@@ -252,7 +220,21 @@ def fw_step_away_old(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_rem
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     return perturbed_image, gap_FW, S_t, A_t, info
 
-def fw_step_pairwise(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_remove_tol=0.01):
+def update_active_pair(gamma, S_t, A_t, s_t, epsilon):
+    diffs = [torch.sum(torch.abs(s_t - s)).item() for s in S_t]#[torch.max(torch.abs(s_t - s)).item() for s in S_t]
+    min_diff = min(diffs)
+    arg = np.argmin(diffs)
+    if min_diff < 0.9*epsilon:
+        # s_t already in S_t
+        s_t_idx = arg
+    else:
+        S_t.append(s_t)
+        A_t.append(0.0)
+        s_t_idx = len(S_t) - 1
+    A_t = [a + gamma if i == s_t_idx else a - gamma for i, a in enumerate(A_t)]
+    return S_t, A_t
+
+def fw_step_pairwise(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method):
     info = {}
     # FW direction
     g_t_sign = g_t.sign()
@@ -261,16 +243,19 @@ def fw_step_pairwise(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_rem
     # AWAY direction. From set of vertices already visited
     away_costs = []
     for v in S_t:
-        #<good direction, vertex>
         away_costs.append(torch.sum(-g_t*v).item())
-    v_t_idx = np.argmax(away_costs)
+    v_t_idx = np.argmin(away_costs)
     v_t = S_t[v_t_idx]
+    alpha_v_t = A_t[v_t_idx]
+    max_step = alpha_v_t
     d_t_AWAY = x_t - v_t
-    gap_FW = torch.sum(g_t * d_t_FW).item()
-    gap_AWAY = torch.sum(g_t*d_t_AWAY).item()
+    gap_FW = torch.sum(-g_t * d_t_FW).item()
+    gap_AWAY = torch.sum(-g_t*d_t_AWAY).item()
     info['gap_FW'] = gap_FW
     info['gap_AS'] = gap_AWAY
-    d_t_pair = s_t - v_t
+    d_t = s_t - v_t
+    fw_stepsize = stepsize_method.get_stepsize(x_t, d_t, max_step)
+    update_active_pair(fw_stepsize, S_t, A_t, s_t, epsilon)
     perturbed_image = x_t + fw_stepsize * d_t
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     return perturbed_image, gap_FW, S_t, A_t, info
@@ -378,18 +363,26 @@ class stepsize():
         self.stepsize = 2 / (t + 2)
         return
 
-    def stepsize_linesearch(self, x_t, d_t):
+    def stepsize_linesearch(self, x_t, d_t, max_step = 1):
         x_tc = x_t.clone().detach()
         d_tc = d_t.clone().detach()
         losses = []
         with torch.no_grad():
-            steps = [(i + 1) / self.ls_num_samples for i in range(self.ls_num_samples)]
+            steps = [max_step * (i + 1) / self.ls_num_samples for i in range(self.ls_num_samples)]
             for step in steps:
                 output = self.model(x_tc + step * d_tc)
                 losses.append(self.ls_criterion(output, self.ls_target))
         best_idx = np.argmin(losses) # check if this is min or max
         self.stepsize = steps[best_idx]
         return self.stepsize
+    
+    def get_stepsize(self, x_t, d_t, max_step = 1):
+        if self.strat == 'ls':
+            fw_stepsize = self.stepsize_linesearch(x_t, d_t, max_step)
+        else:
+            fw_stepsize = self.stepsize
+        fw_stepsize = min(fw_stepsize, max_step)
+        return fw_stepsize
 
 def test_fw(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw', early_stopping = None, fw_stepsize_rule = 1, gap_FW_tol = 0.05):
     testloader = target_model.testloader
@@ -457,6 +450,8 @@ def test_fw(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='
                     perturbed_image, m_t_last, gap_FW = fw_step_momentum(x_t_denorm, epsilon, x_t_grad, m_t_last, x0_denorm, stepsize_method=stepsize_method)
                 elif method == 'fw_away':
                     perturbed_image, gap_FW, S_t, A_t, info = fw_step_away(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
+                elif method == 'fw_pair':
+                    perturbed_image, gap_FW, S_t, A_t, info = fw_step_pairwise(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
                 elif method == 'fw_away_old':
                     perturbed_image, gap_FW, S_t, A_t, info = fw_step_away_old(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
             # Reapply normalization
