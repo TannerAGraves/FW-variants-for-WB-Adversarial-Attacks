@@ -67,7 +67,7 @@ def fw_step_away(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_remove_
     # AWAY direction. From set of vertices already visited
     away_costs = []
     for v in S_t:
-        away_costs.append(torch.sum(g_t*v).item())
+        away_costs.append(torch.sum(-g_t*v).item()) # negative here because were attacking
     v_t_idx = np.argmax(away_costs)
     v_t = S_t[v_t_idx]
     # at each iter x_t expressed by convex combination of active verticies
@@ -75,7 +75,7 @@ def fw_step_away(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_remove_
     d_t_AWAY = x_t - v_t
     #check optimality (FW gap)
     gap_FW = torch.sum(-g_t * d_t_FW).item()
-    gap_AWAY = torch.sum(-g_t*d_t_AWAY).item()
+    gap_AWAY = torch.sum(g_t*d_t_AWAY).item()
     info['gap_FW'] = gap_FW
     info['gap_AS'] = gap_AWAY
 
