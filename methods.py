@@ -135,17 +135,17 @@ def fw_step_away(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, debug = True)
     away_costs = []
     for v in S_t:
         away_costs.append(torch.sum(-g_t*v).item()) # negative here because were attacking
-    v_t_idx = np.argmax(away_costs)
+    v_t_idx = np.argmin(away_costs) # docs have arg max
     v_t = S_t[v_t_idx]
     # at each iter x_t expressed by convex combination of active verticies
     #alpha_v_t = alphas_t[v_t_idx]
     d_t_AWAY = x_t - v_t
     #check optimality (FW gap)
     gap_FW = torch.sum(-g_t * d_t_FW).item()
-    gap_AWAY = torch.sum(g_t*d_t_AWAY).item()
+    gap_AWAY = torch.sum(-g_t*d_t_AWAY).item()
     info['gap_FW'] = gap_FW
     info['gap_AS'] = gap_AWAY
-    info['gap_ASmin'] = torch.sum(g_t*(x_t - S_t[np.argmin(away_costs)])).item()
+    info['gap_ASmax'] = torch.sum(g_t*(x_t - S_t[np.argmax(away_costs)])).item()
 
     
     # check which direction is closer to the gradient
@@ -245,15 +245,37 @@ def fw_step_away_old(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_rem
     A_t = [a_k for a_k in A_t if a_k >= alpha_remove_tol]
     info['alphas'] = A_t
     # line-search for the best gamma (FW stepsize)
-    #perturbed_image = x_t + fw_stepsize * d_t
-    perturbed_image = sum([alpha * v for alpha, v in zip(A_t, S_t)])
+    perturbed_image = x_t + fw_stepsize * d_t
+    #perturbed_image = sum([alpha * v for alpha, v in zip(A_t, S_t)])
     info['diff'] = torch.max(torch.abs(perturbed_image - x_t + fw_stepsize * d_t))
     #info['minmax'] = (torch.min(perturbed_image).item(),torch.max(perturbed_image).item()) # debug
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     return perturbed_image, gap_FW, S_t, A_t, info
 
-
 def fw_step_pairwise(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_remove_tol=0.01):
+    info = {}
+    # FW direction
+    g_t_sign = g_t.sign()
+    s_t = -epsilon * g_t_sign + x0
+    d_t_FW = s_t - x_t
+    # AWAY direction. From set of vertices already visited
+    away_costs = []
+    for v in S_t:
+        #<good direction, vertex>
+        away_costs.append(torch.sum(-g_t*v).item())
+    v_t_idx = np.argmax(away_costs)
+    v_t = S_t[v_t_idx]
+    d_t_AWAY = x_t - v_t
+    gap_FW = torch.sum(g_t * d_t_FW).item()
+    gap_AWAY = torch.sum(g_t*d_t_AWAY).item()
+    info['gap_FW'] = gap_FW
+    info['gap_AS'] = gap_AWAY
+    d_t_pair = s_t - v_t
+    perturbed_image = x_t + fw_stepsize * d_t
+    perturbed_image = torch.clamp(perturbed_image, 0, 1)
+    return perturbed_image, gap_FW, S_t, A_t, info
+
+def fw_step_pairwise_alt(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_remove_tol=0.01):
     g_t_sign = g_t.sign()
     v_t = -epsilon * g_t_sign + x0
     d_t = v_t - x_t
