@@ -56,8 +56,114 @@ def fw_step_momentum(x_t, epsilon, g_t, m_t_last, x0, stepsize_method, momentum 
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     return perturbed_image, m_t, gap_FW
 
+def update_active_away(gamma, gamma_max, S_t, A_t, s_t, v_t_idx, step_type, epsilon, debug = True):
+    """
+    Args:
+        gamma (float): stepsize
+        gamma_max (int): Max stepsize informs when FW step will make S_t singular or AS dropstep
+        S_t (list(torch.Tensor)): Active set of directions s.t. x_t in conv{S_t}
+        A_t (list(float)): coefficients corresponding to atoms in S_t. x_t = A_t .* S_t
+        v_t_idx (int): index of away atom in S_t
+    """
+    info = {}
+    debug_info = {}
+    if step_type == 'FW':
+        if abs(gamma - 1) < 0.001:
+            # drop step
+            S_t = [s_t]
+            A_t = [1]
+            debug_info['drop_step'] = 'FW'
+        else:
+            ## UPDATE S
+            # need to check if vertex is already in S
+            diffs = [torch.sum(torch.abs(s_t - s)).item() for s in S_t]#[torch.max(torch.abs(s_t - s)).item() for s in S_t]
+            min_diff = min(diffs)
+            arg = np.argmin(diffs)
+            if min_diff < 0.9*epsilon:
+                # s_t already in S_t
+                s_t_idx = arg
+                debug_info['FW_revisit'] = True
+            else:
+                S_t.append(s_t)
+                A_t.append(0.0)
+                s_t_idx = -1
+            debug_info["min_revisit_diff"] = min_diff
+            ## UPDATE ALPHAS
+            A_t = [(1 - gamma) * alpha for alpha in A_t]
+            A_t[s_t_idx] += gamma
+    elif step_type == 'AS':
+        if gamma >= gamma_max:
+            # drop step: remove atom and alpha
+            A_t.pop(v_t_idx)
+            S_t.pop(v_t_idx)
+            debug_info['drop_step'] = 'AS'
+        else:
+            ## UPDATE ALPHAS
+            A_t = [(1 + gamma) * alpha for alpha in A_t]
+            A_t[s_t_idx] -= gamma
+    else:
+        raise Exception("Step must be FW or AS")
+    if debug:
+        info.update(debug_info)
+    return S_t, A_t, info
 
-def fw_step_away(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_remove_tol = 0.01):
+def fw_step_away(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, debug = True):
+    info = {}
+    # alg from FW_varients.pdf
+    # FW direction
+    g_t_sign = g_t.sign()
+    s_t = -epsilon * g_t_sign + x0
+    d_t_FW = s_t - x_t
+    # AWAY direction. From set of vertices already visited
+    away_costs = []
+    for v in S_t:
+        away_costs.append(torch.sum(-g_t*v).item()) # negative here because were attacking
+    v_t_idx = np.argmax(away_costs)
+    v_t = S_t[v_t_idx]
+    # at each iter x_t expressed by convex combination of active verticies
+    #alpha_v_t = alphas_t[v_t_idx]
+    d_t_AWAY = x_t - v_t
+    #check optimality (FW gap)
+    gap_FW = torch.sum(-g_t * d_t_FW).item()
+    gap_AWAY = torch.sum(g_t*d_t_AWAY).item()
+    info['gap_FW'] = gap_FW
+    info['gap_AS'] = gap_AWAY
+    info['gap_ASmin'] = torch.sum(g_t*(x_t - S_t[np.argmin(away_costs)])).item()
+
+    
+    # check which direction is closer to the gradient
+    if (gap_FW >= gap_AWAY) or (len(S_t) == 1):
+        step_type = 'FW'
+        d_t = d_t_FW
+        max_step = 1
+    else:
+        step_type = 'AS'
+        d_t = d_t_AWAY
+        alpha_v_t = A_t[v_t_idx]
+        max_step = 1 if alpha_v_t == 1 else alpha_v_t / (1 - alpha_v_t) # avoid divide by zero when alpha = 1
+    info['step_type'] = step_type
+    info['max_step'] = max_step
+    # determine stepsize according to rule
+    if stepsize_method.strat == 'ls':
+        fw_stepsize = stepsize_method.stepsize_linesearch(x_t, d_t)
+    else:
+        fw_stepsize = stepsize_method.stepsize
+    # clip stepsize according to rule to max_step as defined above
+    fw_stepsize = min(fw_stepsize, max_step)
+    info['stepsize'] = fw_stepsize
+    
+    S_t, A_t, update_info = update_active_away(fw_stepsize, max_step, S_t, A_t, s_t, v_t_idx, step_type, epsilon, debug=debug)
+
+    info['alphas'] = A_t
+    perturbed_image = x_t + fw_stepsize * d_t
+    #perturbed_image = sum([alpha * v for alpha, v in zip(A_t, S_t)])
+    info['diff'] = torch.max(torch.abs(perturbed_image - x_t + fw_stepsize * d_t)).item()
+    #info['minmax'] = (torch.min(perturbed_image).item(),torch.max(perturbed_image).item()) # debug
+    perturbed_image = torch.clamp(perturbed_image, 0, 1)
+    info.update(update_info)
+    return perturbed_image, gap_FW, S_t, A_t, info
+
+def fw_step_away_old(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_remove_tol = 0.001):
     info = {}
     # alg from FW_varients.pdf
     # FW direction
@@ -83,11 +189,19 @@ def fw_step_away(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_remove_
     # check which direction is closer to the gradient
     if (gap_FW >= gap_AWAY) or (len(S_t) == 1):
         info['step'] = 'FW'
-        info['S_idx'] = -1 #idicate last vertex is S_t is used which is the current FW direction
         d_t = d_t_FW
         max_step = 1
-        S_t.append(d_t.clone().detach())
-        A_t.append(max_step)
+        diffs = np.max([torch.max(torch.abs(s - s_t)).item() for s in S_t]) # check the inf norm of difference to see if vertex already active
+        diff = np.max(diffs)
+        idx = np.argmax(diffs)
+        if diff < 0.001:
+            print(f'whoo{diff}')
+            s_t_idx = idx
+        else:
+            s_t_idx = -1
+            S_t.append(d_t.clone().detach())
+            A_t.append(max_step)
+        info['S_idx'] = s_t_idx
     else:
         info['step'] = 'AS'
         info['S_idx'] = v_t_idx
@@ -114,7 +228,10 @@ def fw_step_away(x_t, epsilon, g_t, x0, S_t, A_t, stepsize_method, alpha_remove_
     A_t = [a_k for a_k in A_t if a_k >= alpha_remove_tol]
     info['alphas'] = A_t
     # line-search for the best gamma (FW stepsize)
-    perturbed_image = x_t + fw_stepsize * d_t
+    #perturbed_image = x_t + fw_stepsize * d_t
+    perturbed_image = sum([alpha * v for alpha, v in zip(A_t, S_t)])
+    info['diff'] = torch.max(torch.abs(perturbed_image - x_t + fw_stepsize * d_t))
+    #info['minmax'] = (torch.min(perturbed_image).item(),torch.max(perturbed_image).item()) # debug
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     return perturbed_image, gap_FW, S_t, A_t, info
 
@@ -288,14 +405,17 @@ def test_fw(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='
             x_t_denorm = target_model.denorm(x_t)
 
             # Call Attack
-            if method == 'fgsm':
-                perturbed_image = fgsm_attack(x_t_denorm, epsilon, x_t_grad)
-            elif method == 'fw':
-                perturbed_image, gap_FW, info = fw_step(x_t_denorm, epsilon, x_t_grad, x0_denorm, stepsize_method=stepsize_method)
-            elif method == 'fw_momentum':
-                perturbed_image, m_t_last, gap_FW = fw_step_momentum(x_t_denorm, epsilon, x_t_grad, m_t_last, x0_denorm, stepsize_method=stepsize_method)
-            elif method == 'fw_away':
-                perturbed_image, gap_FW, S_t, A_t, info = fw_step_away(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
+            with torch.no_grad():
+                if method == 'fgsm':
+                    perturbed_image = fgsm_attack(x_t_denorm, epsilon, x_t_grad)
+                elif method == 'fw':
+                    perturbed_image, gap_FW, info = fw_step(x_t_denorm, epsilon, x_t_grad, x0_denorm, stepsize_method=stepsize_method)
+                elif method == 'fw_momentum':
+                    perturbed_image, m_t_last, gap_FW = fw_step_momentum(x_t_denorm, epsilon, x_t_grad, m_t_last, x0_denorm, stepsize_method=stepsize_method)
+                elif method == 'fw_away':
+                    perturbed_image, gap_FW, S_t, A_t, info = fw_step_away(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
+                elif method == 'fw_away_old':
+                    perturbed_image, gap_FW, S_t, A_t, info = fw_step_away_old(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
             # Reapply normalization
             x_t = target_model.renorm(perturbed_image)#transforms.Normalize((0.1307,), (0.3081,))(perturbed_image).detach()
 
