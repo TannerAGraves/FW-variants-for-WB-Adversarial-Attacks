@@ -1,7 +1,8 @@
 \documentclass{article}
 \usepackage{graphicx} % Required for inserting images
-%\usepackage{algorithm}
-%\usepackage{algpseudocode}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage{mathrsfs}
 
 \title{Comparison of Frank-Wolfe Varients for White-Box Adversarial Attacks}
@@ -13,15 +14,47 @@
 \maketitle
 
 \section{Introduction}
-What are Adversarial attacks\\
-Problem statement\\
-Type of Norms
+With deep neural networks becoming ubiquitous in application, adversarial attacks have recieved much attention, as it has proved remarkably easy to create adversarial examples- genuine data that undergoes a minimal and unobtrusive corruption process inorder to maximally harm the performance of a model. 
+This is typically stated as the following constrained optimization problem:
+\begin{equation}
+\begin{aligned}
+\min_x \quad & f(x)\\
+\text{s.t.} \quad & ||x||_p \leq \epsilon
+\end{aligned}
+\end{equation}
+In the case of untargeted attacks on a classifier, where we perturb an example with the aim it be incorrectly predicted as any other class. Here $f(x)$ is the loss function of the attacked model $-\ell(x, \hat{y})$. In the case of targeted attacks we take $f(x) = \ell(x, \hat{y}\neq y)$.
+%todo: state if we focus on untarged, or see if I have enough time to implement targeted.
+The $L_p$ constraint $||x||_p \leq \epsilon$ directly restricts the size of perturbations made the to the example. An inherient problem of DNNs is often attacks can be consistently sucessful even with very small, even imperceptable $\epsilon$. Different choices of $p$ may be made giving $||x||_p = (\sum_i{x_i^p})^{1/p}$. Or commonly, as we use here $L_\infty(x) = \max_i |x_i|$. 
+%Constrained problem
+The constrained nature of this problem limits the applicabiliy of a method like gradient descent, and requires integrating knowledge of the constraint space for effective optimization. Methods like Fast Signed Gradient attacks and projected gradient descent are popular choices, but are each limited either by providing maximal and simple adversarial examples or being computationally inefficient. We explore Frank-Wolfe varients wich are well suited to this problem by ensuring feasibility within the constraint set at each iteration with the efficient solving of a Linear Minimization Oracle (LMO). 
+% White box vs.black box
+Here we focus on white-box adversarial attacks which utilize the model structure for calculating $\nabla f(x)$. In senerios where this is not accessible, attacks are black-box and generally require methods to estimate the gradient with zeroth order methods.
 
 \section{Algorithims}
 \subsection{Frank-Wolfe}
+\begin{algorithm}
+\caption{An algorithm with caption}\label{alg:cap}
+\begin{algorithmic}[1]
+\Require maximum iterations $T$, stepsizes $\{\gamma_t\}$
+\Ensure $y = x^n$
+\State $x_0 = x_{\text{ori}}$
+\For{$t = 1,...,T$}
+	% for the sets use the notation from FW_varients for consistency
+	% M is the condstrained space of the attack and A is the set of vertieces
+	\State $s_t = {\arg \min}_{x\in\mathcal{M}} \langle x, \nabla f(x_t)\rangle$
+	\State $d_t = s_t - x_t$
+	\State $x_{t+1} = x_t + \gamma_t d_t$
+	% TODO: maybe mention FW gap converg crit here
+\EndFor
+\end{algorithmic}
+\end{algorithm}
 
-\subsection{Pairwise Frank-Wolfe}
+% TODO:explain the LMO, why it is fast, why it stays in the constrained set. How long it takes to compute
+Observing oscilation in Frank Wolfe convergence is common and consequence of optimal points lying on a face of $\mathcal{M}$. Since at each iteration the method is moving twrods a vetex of $\mathcal{M}$, which we denote the set of as $\mathcal{S}$, the method "zigzags", moving twords different points in effort to gradually approach the face on which the optimum lies. We implement varients that aim to address this problem to provide better convergece. The simplest of which is adding momentum to standerd frank wolf which replaces the gradient in the LMO calulation in line $(4)$ with a momentum term $m_t  = \beta m_{t-1} + (1-\beta) \nabla f(x_t)$ and initialize $m_0 = \nabla f(x_0)$. By considering this exponentially weighted average of gradient information, momentum varients are emperically observed to have nicer convergence. 
+%reference attacks.pdf
 \subsection{Away-Step Frank-Wolfe}
+\subsection{Pairwise Frank-Wolfe}
+
 \section{Results}
 Introduce Datasets
 \subsection{Momentum}
