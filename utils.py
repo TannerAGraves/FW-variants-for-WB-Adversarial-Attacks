@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import pandas as pd
 import torch
@@ -165,9 +166,10 @@ class stepsize():
         return fw_stepsize
 
 def test_fw(target_model, device, epsilon, num_fw_iter, num_test=1000, method='fw', early_stopping=None,
-            fw_stepsize_rule=1, gap_FW_tol=0.05):
+            fw_stepsize_rule=1, gap_FW_tol=0.05, targeted=False):
     testloader = target_model.testloader
     model = target_model.model
+    num_classes = target_model.num_classes
 
     # Accuracy counter
     correct = 0
@@ -188,7 +190,14 @@ def test_fw(target_model, device, epsilon, num_fw_iter, num_test=1000, method='f
         S_t = [x0_denorm]
         A_t = [1]
         info = None
-        criterion = AdversarialLoss(10)
+        adv_target = None
+        if targeted:
+            # select a random target for attack that is not the true target.
+            adv_target = random.randint(0, num_classes - 2)
+            adv_target = adv_target if adv_target < target else adv_target + 1
+            criterion = AdversarialLoss(num_classes, specific_label=adv_target)
+        else:
+            criterion = AdversarialLoss(num_classes)
         stepsize_method = stepsize(model, fw_stepsize_rule, ls_criterion=criterion, ls_target=target)
 
         for t in range(num_fw_iter):
@@ -330,6 +339,8 @@ def test_fw(target_model, device, epsilon, num_fw_iter, num_test=1000, method='f
                 'pred': final_pred.item(),
                 'stop_cond': stop_reason
             }
+            if targeted:
+                info['adv_target'] = adv_target
             if info is not None:
                 hist_iter.update(info)  # some methods output dict containing info at each step
             hist.append(hist_iter)
