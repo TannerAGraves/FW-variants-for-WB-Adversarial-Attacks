@@ -57,10 +57,35 @@ Observing oscilation in Frank Wolfe convergence is common and consequence of opt
 % TODO: talk about the LMO. Complexity in FW.pdf
 The LMO finds an optimal direction on 
 The LMO is also refered tp as the Frank-Wolfe sub problem and can be generally costly to compute, however, in the case of our constraint set $\mathcal{M}$ which is the $L_\infty$ ball, the LMO has a closed form solution:
-$$s_t = -\epsilon \text{sign}(\nabla f(x)) +  
+$$s_t = -\epsilon \text{ sign}(\nabla f(x)) +  x_\text{ori}$$
 % TODO: define duality and convergence criterion as in attacks.pdf, some more details in FW.pdf but less relevant.
 The convergence criterion used here is the Frank
 \subsection{Away-Step Frank-Wolfe}
+\begin{algorithm}
+\caption{Away-Step FW for Adversarial Attacks}\label{alg:cap}
+\begin{algorithmic}[1]
+\Require maximum iterations $T$, stepsizes $\{\gamma_t\}$, convergence tolerence $\delta$, $x_0 \in \mathcal{M}$
+\State Define $S_0 := \{x_0\}$ with $\alpha_{x_0} = 1$
+\For{$t = 1,...,T$}
+	\State $s_t  := {\arg \min}_{x\in\mathcal{M}} \langle x, \nabla f(x_t)\rangle$ \Comment{LMO step}
+	\State $d_t^{\text{FW}} := s_t - x_t$
+	\State $v_t  := {\arg \max}_{v\in S_t} \langle v, \nabla f(x_t)\rangle$
+	\State $d_t^{\text{A}} := x_t - v_t$
+	% for the sets use the notation from FW_varients for consistency
+	% M is the condstrained space of the attack and A is the set of vertieces
+	\If{$\langle d_t^\text{FW}, -\nabla f(x)\rangle < \delta$} \text{return} $x_t$ \hfill \Comment{FW gap convergence criterion}
+	\EndIf
+	\If $\langle d_t^\text{FW}, -\nabla f(x)\rangle < \langle d_t^\text{A}, -\nabla f(x)\rangle$
+		\State $d_t = d_t^\text{FW}$, $\gamma_\text{max} := 1$
+	\Else
+		\State $d_t := d_t^\text{A}$, $\gamma_\text{max} := \frac{\alpha_{v_t}}{1- \alpha_{v_t}}$
+	\EndIf
+	\State $x_{t+1} = x_t + \gamma_t d_t$
+	\State Update $\alpha$, $S_{t+1}$ s.t. $\langle \alpha, S_{t+1}\rangle = x_{t+1}$ (See below)
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
 \subsection{Pairwise Frank-Wolfe}
 
 \section{Results}
