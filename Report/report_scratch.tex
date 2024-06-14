@@ -35,16 +35,18 @@ Here we focus on white-box adversarial attacks which utilize the model structure
 \begin{algorithm}
 \caption{An algorithm with caption}\label{alg:cap}
 \begin{algorithmic}[1]
-\Require maximum iterations $T$, stepsizes $\{\gamma_t\}$
+\Require maximum iterations $T$, stepsizes $\{\gamma_t\}$, convergence tolerence $\delta$
 \Ensure $y = x^n$
 \State $x_0 = x_{\text{ori}}$
 \For{$t = 1,...,T$}
 	% for the sets use the notation from FW_varients for consistency
 	% M is the condstrained space of the attack and A is the set of vertieces
-	\State $s_t = {\arg \min}_{x\in\mathcal{M}} \langle x, \nabla f(x_t)\rangle$
+	\State $s_t = {\arg \min}_{x\in\mathcal{M}} \langle x, \nabla f(x_t)\rangle$ \Comment{LMO step}
 	\State $d_t = s_t - x_t$
 	\State $x_{t+1} = x_t + \gamma_t d_t$
 	% TODO: maybe mention FW gap converg crit here
+	\If{$\langle d_t, -\nabla f(x)\rangle < \delta$} \text{return} \hfill \Comment{FW gap convergence criterion}
+	\EndIf
 \EndFor
 \end{algorithmic}
 \end{algorithm}
@@ -52,6 +54,12 @@ Here we focus on white-box adversarial attacks which utilize the model structure
 % TODO:explain the LMO, why it is fast, why it stays in the constrained set. How long it takes to compute
 Observing oscilation in Frank Wolfe convergence is common and consequence of optimal points lying on a face of $\mathcal{M}$. Since at each iteration the method is moving twrods a vetex of $\mathcal{M}$, which we denote the set of as $\mathcal{S}$, the method "zigzags", moving twords different points in effort to gradually approach the face on which the optimum lies. We implement varients that aim to address this problem to provide better convergece. The simplest of which is adding momentum to standerd frank wolf which replaces the gradient in the LMO calulation in line $(4)$ with a momentum term $m_t  = \beta m_{t-1} + (1-\beta) \nabla f(x_t)$ and initialize $m_0 = \nabla f(x_0)$. By considering this exponentially weighted average of gradient information, momentum varients are emperically observed to have nicer convergence. 
 %reference attacks.pdf
+% TODO: talk about the LMO. Complexity in FW.pdf
+The LMO finds an optimal direction on 
+The LMO is also refered tp as the Frank-Wolfe sub problem and can be generally costly to compute, however, in the case of our constraint set $\mathcal{M}$ which is the $L_\infty$ ball, the LMO has a closed form solution:
+$$s_t = -\epsilon \text{sign}(\nabla f(x)) +  
+% TODO: define duality and convergence criterion as in attacks.pdf, some more details in FW.pdf but less relevant.
+The convergence criterion used here is the Frank
 \subsection{Away-Step Frank-Wolfe}
 \subsection{Pairwise Frank-Wolfe}
 

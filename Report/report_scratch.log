@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  13 JUN 2024 19:31
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  13 JUN 2024 19:44
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -221,13 +221,13 @@ L3 programming layer <2024-05-27>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 2727 strings out of 473600
- 41717 string characters out of 5732738
+ 2729 strings out of 473600
+ 41740 string characters out of 5732738
  1935894 words of memory out of 5000000
- 25594 multiletter control sequences out of 15000+600000
+ 25596 multiletter control sequences out of 15000+600000
  564441 words of font info for 61 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 57i,9n,65p,876b,289s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 57i,9n,65p,876b,291s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><c:/tex
 live/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/texlive/2024
 /texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2024/texmf-di
@@ -240,7 +240,7 @@ texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb><c:/texlive/202
 4/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2024/texmf-dis
 t/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/texlive/2024/texmf-dist/fonts/t
 ype1/public/amsfonts/cm/cmsy7.pfb>
-Output written on report_scratch.pdf (3 pages, 157981 bytes).
+Output written on report_scratch.pdf (3 pages, 158912 bytes).
 PDF statistics:
  79 PDF objects out of 1000 (max. 8388607)
  47 compressed objects within 1 object stream
