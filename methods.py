@@ -18,6 +18,7 @@ def fgsm_attack(image, epsilon, data_grad):
 
 def fw_step(x_t, epsilon, g_t, x0, stepsize_method):
     # alg from attacks.pdf. Modified to remove momentum.
+    info = {}
     g_t_sign = g_t.sign()
     v_t = -epsilon * g_t_sign + x0
     d_t = v_t - x_t
@@ -28,7 +29,7 @@ def fw_step(x_t, epsilon, g_t, x0, stepsize_method):
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     #gap_FW = torch.sum(d_t * g_t).item()#torch.dot(d_t, g_t)
     gap_FW = torch.sum(-d_t * g_t).item()
-    return perturbed_image, gap_FW
+    return perturbed_image, gap_FW, info
 
 def fw_step_momentum(x_t, epsilon, g_t, m_t_last, x0, stepsize_method, momentum = 0.2):
     # alg from attacks.pdf
@@ -460,7 +461,7 @@ def test_fw(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='
             # Re-classify the perturbed image
             x_t.requires_grad = False
             output = model(x_t)
-
+            info['l_inf'] = torch.max(torch.abs(x0_denorm - perturbed_image))
             # Check for success
             final_pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
             if final_pred.item() == target.item():
