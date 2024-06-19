@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import pandas as pd
 import torch
@@ -59,13 +60,14 @@ class AdversarialLoss(nn.Module):
             return loss.mean()
         
 class stepsize():
-    def __init__(self, model, strat, fixed_size = 1, ls_criterion=None, ls_target = None, ls_num_samples=10):
+    def __init__(self, model, strat, x0, fixed_size = 1, ls_criterion=None, ls_target = None, ls_num_samples=10):
         if isinstance(strat, (float, int)):
             fixed_size = strat
             strat = 'fixed'
         self.model = model
         self.strat = strat
         self.fixed_size = fixed_size
+        self.x0 = x0
         self.ls_criterion = ls_criterion
         self.ls_target = ls_target
         self.ls_num_samples = ls_num_samples
@@ -98,7 +100,7 @@ class stepsize():
         fw_stepsize = min(fw_stepsize, max_step)
         return fw_stepsize
 
-def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw', early_stopping = None, fw_stepsize_rule = 1, gap_FW_tol = 0.05):
+def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw', early_stopping = None, fw_stepsize_rule = 1, gap_FW_tol = 0.05, targeted = False):
     testloader = target_model.testloader
     model = target_model.model
 
@@ -113,9 +115,15 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
         # Send the data and label to the device
         x0, target = x0.to(device), target.to(device)
         x0_denorm = target_model.denorm(x0)
-        criterion = AdversarialLoss(10)
+        if targeted:
+            # select a random target for attack that is not the true target.
+            adv_target = random.randint(0, target_model.num_classes - 2)
+            adv_target = adv_target if adv_target < target else adv_target + 1
+            criterion = AdversarialLoss(target_model.num_classes, specific_label=adv_target)
+        else:
+            criterion = AdversarialLoss(target_model.num_classes)
         lmo = LMO(epsilon, x0_denorm)
-        stepsize_method = stepsize(model, fw_stepsize_rule, ls_criterion=criterion, ls_target=target)
+        stepsize_method = stepsize(model, fw_stepsize_rule, x0_denorm, ls_criterion=criterion, ls_target=target)
         attackStep = AttackStep(method, epsilon, x0_denorm, lmo, stepsize_method)
         #x_t.requires_grad = True  #Set requires_grad attribute of tensor. Important for Attack
         had_first_success = False
@@ -137,43 +145,23 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
 
             # Calculate the loss
             loss = criterion(output, target)
-            #1 - F.nll_loss(output, target) # DNN maximizing POSITIVE log liklihood
-            #criterion = nn.CrossEntropyLoss()
-            #loss = criterion(output, target)
-            #loss = untargeted_attack_loss(output, target)
-
             # Zero all existing gradients
             model.zero_grad()
-
             # Calculate gradients of model in backward pass
             loss.backward()
             x_t_grad = x_t.grad#.data
-
             # Restore the data to its original scale
             x_t_denorm = target_model.denorm(x_t)
-
             # Call Attack
             with torch.no_grad():
                 perturbed_image, gap_FW, info = attackStep.step(x_t_denorm, x_t_grad)
-                # if method == 'fgsm':
-                #     perturbed_image = fgsm_attack(x_t_denorm, epsilon, x_t_grad)
-                # elif method == 'fw':
-                #     perturbed_image, gap_FW, info = fw_step(x_t_denorm, epsilon, x_t_grad, x0_denorm, stepsize_method=stepsize_method)
-                # elif method == 'fw_momentum':
-                #     perturbed_image, m_t_last, gap_FW = fw_step_momentum(x_t_denorm, epsilon, x_t_grad, m_t_last, x0_denorm, stepsize_method=stepsize_method)
-                # elif method == 'fw_away':
-                #     perturbed_image, gap_FW, S_t, A_t, info = fw_step_away(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
-                # elif method == 'fw_pair':
-                #     perturbed_image, gap_FW, S_t, A_t, info = fw_step_pairwise(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
-                # elif method == 'fw_away_old':
-                #     perturbed_image, gap_FW, S_t, A_t, info = fw_step_away_old(x_t_denorm, epsilon, x_t_grad, x0_denorm, S_t, A_t, stepsize_method=stepsize_method)
+            
             # Reapply normalization
             x_t = target_model.renorm(perturbed_image)#transforms.Normalize((0.1307,), (0.3081,))(perturbed_image).detach()
-
             # Re-classify the perturbed image
             x_t.requires_grad = False
             output = model(x_t)
-            info['l_inf'] = torch.max(torch.abs(x0_denorm - perturbed_image))
+            info['l_inf'] = torch.max(torch.abs(x0_denorm - perturbed_image)).item()
             # Check for success
             final_pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
             if final_pred.item() == target.item():

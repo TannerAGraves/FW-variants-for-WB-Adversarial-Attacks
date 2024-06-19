@@ -384,16 +384,6 @@ class stepsize():
             fw_stepsize = self.stepsize
         fw_stepsize = min(fw_stepsize, max_step)
         return fw_stepsize
-
-class LMO:
-    def __init__(self, epsilon, x0):
-        self.x0 = x0.clone().detach()  # Ensure x0 is not modified elsewhere
-        self.epsilon = epsilon
-
-    def get(self, g_t):
-        g_t_sign = g_t.sign()
-        s_t = -self.epsilon * g_t_sign + self.x0
-        return s_t
     
 from AttackStep import AttackStep
 def test_fw(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw', early_stopping = None, fw_stepsize_rule = 1, gap_FW_tol = 0.05):
@@ -411,8 +401,6 @@ def test_fw(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='
         # Send the data and label to the device
         x0, target = x0.to(device), target.to(device)
         x0_denorm = target_model.denorm(x0)
-        lmo = LMO(epsilon, x0_denorm)
-        attackStep = AttackStep()
         #x_t.requires_grad = True  #Set requires_grad attribute of tensor. Important for Attack
         m_t_last = None # gradient from previous iter
         had_first_success = False

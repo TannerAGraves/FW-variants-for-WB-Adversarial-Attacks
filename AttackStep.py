@@ -123,9 +123,10 @@ class AttackStep:
                 self.A_t[v_t_idx] -= gamma
         else:
             raise Exception("Step must be FW or AS")
+        fw_stepsize = min(gamma, gamma_max)
         if debug:
             info.update(debug_info)
-        return self.S_t, self.A_t, info
+        return self.S_t, self.A_t, info, fw_stepsize
 
     def fw_step_away(self, x_t, g_t, debug=True):
         info = {}
@@ -166,16 +167,21 @@ class AttackStep:
         fw_stepsize = self.stepsize_method.get_stepsize(x_t, d_t, max_step)
         info['stepsize'] = fw_stepsize
 
-        self.S_t, self.A_t, update_info = self.update_active_away(fw_stepsize, max_step, s_t, v_t_idx, step_type,
+        self.S_t, self.A_t, update_info, fw_stepsize = self.update_active_away(fw_stepsize, max_step, s_t, v_t_idx, step_type,
                                                 debug=debug)
 
         info['alphas'] = self.A_t
-        perturbed_image = x_t + fw_stepsize * d_t
-        # perturbed_image = sum([alpha * v for alpha, v in zip(A_t, S_t)])
-        info['diff'] = torch.max(torch.abs(perturbed_image - x_t + fw_stepsize * d_t)).item()
+        perturbed_image_step = x_t + fw_stepsize * d_t
+        perturbed_image_alpha = sum([alpha * v for alpha, v in zip(self.A_t, self.S_t)])
+        info['L_inf_step'] = torch.max(torch.abs(perturbed_image_step - self.x0_denorm)).item()
+        info['L_inf_alpha'] = torch.max(torch.abs(perturbed_image_alpha - self.x0_denorm)).item()
+        info['step_alpha_inner'] = torch.sum((perturbed_image_step - self.x0_denorm)*(perturbed_image_alpha - self.x0_denorm))
         # info['minmax'] = (torch.min(perturbed_image).item(),torch.max(perturbed_image).item()) # debug
+        perturbed_image = perturbed_image_step
         perturbed_image = torch.clamp(perturbed_image, 0, 1)
         info.update(update_info)
+        ## DEBUG REMOVE ME
+        self.last_d = d_t
         return perturbed_image, gap_FW, info
 
     def update_active_pair(self, gamma, s_t):
