@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from AttackStep import AttackStep
+from tqdm import tqdm
 
 class LMO:
     def __init__(self, epsilon, x0):
@@ -110,7 +111,7 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
     hist = []
     ex_num = 0
     # Loop over all examples in test set
-    for x0, target in testloader:
+    for x0, target in tqdm(testloader):
         x_t = x0.detach().clone().to(device)  # Clone and move to device
         # Send the data and label to the device
         x0, target = x0.to(device), target.to(device)

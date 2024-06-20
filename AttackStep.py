@@ -112,7 +112,7 @@ class AttackStep:
                 self.A_t = [(1 - gamma) * alpha for alpha in self.A_t]
                 self.A_t[s_t_idx] += gamma
         elif step_type == 'AS':
-            if gamma >= gamma_max:
+            if False: #gamma >= gamma_max:
                 # drop step: remove atom and alpha
                 self.A_t.pop(v_t_idx)
                 self.S_t.pop(v_t_idx)
@@ -123,6 +123,17 @@ class AttackStep:
                 self.A_t[v_t_idx] -= gamma
         else:
             raise Exception("Step must be FW or AS")
+        
+        i = 0
+        while i < len(self.A_t):
+            alpha_i = self.A_t[i]
+            if alpha_i <= 0:
+                debug_info['drop_stepAS'] = 'AS'
+                self.A_t.pop(i)
+                self.S_t.pop(i)
+            else:
+                i += 1
+
         fw_stepsize = min(gamma, gamma_max)
         debug_info['v_t_idx'] = v_t_idx
         if debug:
