@@ -137,24 +137,26 @@ class AttackStep:
         s_t = self.lmo.get(g_t)
         d_t_FW = s_t - x_t
         # AWAY direction. From set of vertices already visited
-        away_sign = -1
+        away_sign = 1
         away_costs = []
         for v in self.S_t:
             away_costs.append(torch.sum(away_sign * g_t * v).item())  # negative here because were attacking
-        v_t_idx = np.argmin(away_costs)  # docs have arg max # orginally have arg min for convergence
+        v_t_idx = np.argmax(away_costs)  # docs have arg max # orginally have arg min for convergence
         v_t = self.S_t[v_t_idx]
         # at each iter x_t expressed by convex combination of active verticies
         # alpha_v_t = alphas_t[v_t_idx]
         d_t_AWAY = x_t - v_t
         # check optimality (FW gap)
         gap_FW = torch.sum(-g_t * d_t_FW).item()
-        gap_AWAY = torch.sum(away_sign * g_t * d_t_AWAY).item()
+        gap_AWAY = torch.sum(-g_t * d_t_AWAY).item()
+        #print(gap_FW,away_costs)
         info['gap_FW'] = gap_FW
         info['gap_AS'] = gap_AWAY
+        info['awayCosts'] = away_costs
         # info['gap_ASmax'] = torch.sum(g_t*(x_t - S_t[np.argmax(away_costs)])).item()
 
         # check which direction is closer to the gradient
-        if (gap_FW >= gap_AWAY) or (len(self.S_t) == 1):
+        if (gap_FW >= gap_AWAY) or (len(self.S_t) == 1): #changed ineq
             step_type = 'FW'
             d_t = d_t_FW
             max_step = 1
@@ -177,7 +179,10 @@ class AttackStep:
         perturbed_image_alpha = sum([alpha * v for alpha, v in zip(self.A_t, self.S_t)])
         info['L_inf_step'] = torch.max(torch.abs(perturbed_image_step - self.x0_denorm)).item()
         info['L_inf_alpha'] = torch.max(torch.abs(perturbed_image_alpha - self.x0_denorm)).item()
-        info['step_alpha_diffFactor'] = torch.sum(torch.abs(perturbed_image_step - perturbed_image_alpha)).item() / self.epsilon#torch.sum(torch.abs((perturbed_image_step - self.x0_denorm)-(perturbed_image_alpha - self.x0_denorm))) / self.epsilon
+        alpha_np = ((perturbed_image_alpha).squeeze(0).permute(1, 2, 0).numpy()).clip(0,1)
+        step_np = ((perturbed_image_step).squeeze(0).permute(1, 2, 0).numpy()).clip(0,1)
+        
+        info['step_alpha_diffFactor'] = (alpha_np - step_np).sum() / self.epsilon
         # info['minmax'] = (torch.min(perturbed_image).item(),torch.max(perturbed_image).item()) # debug
         perturbed_image = perturbed_image_step
         perturbed_image = torch.clamp(perturbed_image, 0, 1)

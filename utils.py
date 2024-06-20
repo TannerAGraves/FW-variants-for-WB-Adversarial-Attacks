@@ -162,6 +162,7 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
             x_t.requires_grad = False
             output = model(x_t)
             info['l_inf'] = torch.max(torch.abs(x0_denorm - perturbed_image)).item()
+            info['mdlLoss'] = loss.item()
             # Check for success
             final_pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
             if final_pred.item() == target.item():
