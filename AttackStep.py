@@ -76,7 +76,7 @@ class AttackStep:
         self.m_t_last = m_t.clone().detach()
         return perturbed_image, gap_FW, info
 
-    def update_active_away(self, gamma, gamma_max, s_t, v_t_idx, step_type, debug = True):
+    def update_active_away(self, gamma, s_t, v_t_idx, step_type, debug = True):
         """
         Args:
             gamma (float): stepsize
@@ -134,14 +134,15 @@ class AttackStep:
             else:
                 i += 1
 
-        fw_stepsize = min(gamma, gamma_max)
         debug_info['v_t_idx'] = v_t_idx
         if debug:
             info.update(debug_info)
-        return self.S_t, self.A_t, info, fw_stepsize
+        return self.S_t, self.A_t, info
 
     def fw_step_away(self, x_t, g_t, debug=True):
+        use_conv_comb_x_t = True
         info = {}
+        debug_info = {}
         # alg from FW_varients.pdf
         # FW direction
         ## g_t_sign = g_t.sign() #obsolete
@@ -163,7 +164,7 @@ class AttackStep:
         #print(gap_FW,away_costs)
         info['gap_FW'] = gap_FW
         info['gap_AS'] = gap_AWAY
-        info['awayCosts'] = away_costs
+        debug_info['awayCosts'] = away_costs
         # info['gap_ASmax'] = torch.sum(g_t*(x_t - S_t[np.argmax(away_costs)])).item()
 
         # check which direction is closer to the gradient
@@ -177,28 +178,32 @@ class AttackStep:
             alpha_v_t = self.A_t[v_t_idx]
             max_step = 1 if alpha_v_t == 1 else alpha_v_t / (1 - alpha_v_t)  # avoid divide by zero when alpha = 1
         info['step_type'] = step_type
-        info['max_step'] = max_step
+        debug_info['max_step'] = max_step
         # determine stepsize according to rule
         fw_stepsize = self.stepsize_method.get_stepsize(x_t, d_t, max_step)
         info['stepsize'] = fw_stepsize
 
-        self.S_t, self.A_t, update_info, fw_stepsize = self.update_active_away(fw_stepsize, max_step, s_t, v_t_idx, step_type,
+        self.S_t, self.A_t, update_info = self.update_active_away(fw_stepsize, s_t, v_t_idx, step_type,
                                                 debug=debug)
 
         info['alphas'] = self.A_t
         perturbed_image_step = x_t + fw_stepsize * d_t
         perturbed_image_alpha = sum([alpha * v for alpha, v in zip(self.A_t, self.S_t)])
-        info['L_inf_step'] = torch.max(torch.abs(perturbed_image_step - self.x0_denorm)).item()
-        info['L_inf_alpha'] = torch.max(torch.abs(perturbed_image_alpha - self.x0_denorm)).item()
+        debug_info['L_inf_step'] = torch.max(torch.abs(perturbed_image_step - self.x0_denorm)).item()
+        debug_info['L_inf_alpha'] = torch.max(torch.abs(perturbed_image_alpha - self.x0_denorm)).item()
         alpha_np = ((perturbed_image_alpha).squeeze(0).permute(1, 2, 0).numpy()).clip(0,1)
         step_np = ((perturbed_image_step).squeeze(0).permute(1, 2, 0).numpy()).clip(0,1)
         
-        info['step_alpha_diffFactor'] = (alpha_np - step_np).sum() / self.epsilon
+        debug_info['step_alpha_diffFactor'] = (alpha_np - step_np).sum() / self.epsilon
         # info['minmax'] = (torch.min(perturbed_image).item(),torch.max(perturbed_image).item()) # debug
-        perturbed_image = perturbed_image_step
+        if use_conv_comb_x_t:
+            perturbed_image = perturbed_image_alpha
+        else:
+            perturbed_image = perturbed_image_step
         perturbed_image = torch.clamp(perturbed_image, 0, 1)
         info.update(update_info)
-        ## DEBUG REMOVE ME
+        if debug:
+            info.update(debug_info)
         self.last_d = d_t
         return perturbed_image, gap_FW, info
 
