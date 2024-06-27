@@ -142,6 +142,7 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
 
             # If the initial prediction is wrong, don't bother attacking, just move on
             if (init_pred.item() != target.item()) and (t == 0):
+                ex_num -= 1 # don't count this example
                 break
 
             # Calculate the loss
@@ -216,6 +217,8 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
                 'pred': final_pred.item(),
                 'stop_cond': stop_reason
             }
+            if targeted:
+                hist_iter['adv_target'] = adv_target
             if info is not None:
                 hist_iter.update(info) # some methods output dict containing info at each step
             hist.append(hist_iter)
