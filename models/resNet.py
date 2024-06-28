@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
@@ -45,7 +46,15 @@ class ResNet20():
         self.testloader = torch.utils.data.DataLoader(self.testset,
                                                 batch_size=1, 
                                                 shuffle=True)
-        
+    
+    def remake_testloader(self, seed):
+        torch.manual_seed(seed)
+        random.seed(seed)
+        np.random.seed(seed)
+        self.testloader = torch.utils.data.DataLoader(self.testset,
+                                                batch_size=1, 
+                                                shuffle=True)
+        return self.testloader
     # restores the tensors to their original scale
     def denorm(self, batch):
         """

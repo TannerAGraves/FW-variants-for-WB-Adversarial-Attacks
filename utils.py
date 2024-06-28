@@ -182,8 +182,8 @@ class example_saver():
             self.failed_ex.append( (init_pred.item(), final_pred.item(), ex) )
 
 
-def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw', early_stopping = None, fw_stepsize_rule = 1, gap_FW_tol = 0.05, targeted = False, ex_saver=None, norm_p=-1):
-    testloader = target_model.testloader
+def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw', early_stopping = None, fw_stepsize_rule = 1, gap_FW_tol = 0.05, targeted = False, ex_saver=None, norm_p=-1, seed=42):
+    testloader = target_model.remake_testloader(seed)
     model = target_model.model
 
     # Accuracy counter
