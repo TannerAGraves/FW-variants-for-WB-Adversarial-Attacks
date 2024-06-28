@@ -8,13 +8,33 @@ from AttackStep import AttackStep
 from tqdm import tqdm
 
 class LMO:
-    def __init__(self, epsilon, x0):
+    def __init__(self, epsilon, x0, p=-1):
         self.x0 = x0.clone().detach()  # Ensure x0 is not modified elsewhere
         self.epsilon = epsilon
+        self.p = p
+        if p == -1:
+            self.method = self._LMO_inf
+        elif p == 1:
+            self.method = self._LMO_L1
+        elif p > 1:
+            self.method = self._LMO_Lp
+        else:
+            raise Exception(f"invalid choice of norm {p}")
 
     def get(self, g_t):
+        return self.method(g_t)
+
+    def _LMO_inf(self, g_t):
         g_t_sign = g_t.sign()
         s_t = -self.epsilon * g_t_sign + self.x0
+        return s_t
+    
+    def _LMO_L1(self, g_t):
+        s_t = torch.zeros_like(g_t)
+        for i in range(g_t.size(0)):
+            max_abs_index = torch.argmax(torch.abs(g_t[i]))
+            s_t[i][max_abs_index] = -self.epsilon * g_t[i][max_abs_index].sign()
+        s_t += self.x0
         return s_t
 
 class AdversarialLoss(nn.Module):
@@ -42,12 +62,25 @@ class AdversarialLoss(nn.Module):
         - loss (torch.Tensor): The computed adversarial loss.
         """
         batch_size = outputs.size(0)
+        # if self.specific_label is not None:
+        #     # Targeting a specific incorrect label
+        #     incorrect_labels = torch.full_like(targets, self.specific_label)
+        #     mask = (incorrect_labels != targets).float()
+        #     specific_log_probs = F.log_softmax(outputs, dim=1).gather(1, incorrect_labels.unsqueeze(1)).squeeze(1)
+        #     loss = -specific_log_probs * mask
+        #     return loss.mean()
         if self.specific_label is not None:
             # Targeting a specific incorrect label
-            incorrect_labels = torch.full_like(targets, self.specific_label)
-            mask = (incorrect_labels != targets).float()
-            specific_log_probs = F.log_softmax(outputs, dim=1).gather(1, incorrect_labels.unsqueeze(1)).squeeze(1)
-            loss = -specific_log_probs * mask
+            specific_labels = torch.full_like(targets, self.specific_label)
+            
+            # Compute log probabilities
+            log_probs = F.log_softmax(outputs, dim=1)
+            
+            # Get the log probabilities of the specific label
+            specific_log_probs = log_probs.gather(1, specific_labels.unsqueeze(1)).squeeze(1)
+            
+            # Compute the negative log likelihood
+            loss = -specific_log_probs
             return loss.mean()
         else:
             # Averaging over all incorrect labels
@@ -100,8 +133,55 @@ class stepsize():
             fw_stepsize = self.stepsize
         fw_stepsize = min(fw_stepsize, max_step)
         return fw_stepsize
+    
+def early_stopper(criterion, t, success, first_success, info, gap_FW_tol, max_fw_iter, gap_FW):
+    new_correct = 0
+    if (criterion == 'pred') and first_success:
+        # The attack was successful so the classification was not correct
+        stop = True
+        stop_reason = 'pred'
+    elif (criterion == 'gap_FW') and (gap_FW < gap_FW_tol):
+        if not success: # attack failed
+            new_correct +=1
+        stop = True
+        stop_reason = 'gap'
+    elif (t == max_fw_iter - 1): # Stop condition: Hit max FW iters
+        stop = True
+        stop_reason = 'max_iter'
+        if not success: # attack failed
+            new_correct +=1
+    elif (criterion == 'gap_pairwise') and (info is not None) and (info['gap_pairwise'] < gap_FW_tol):
+        if not success: # attack failed
+            new_correct +=1
+        stop = True
+        stop_reason = 'gap_pairwise'
+    else:
+        # no stop criteria met, continue
+        stop = False
+        stop_reason = None
+    return stop, stop_reason, new_correct
 
-def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw', early_stopping = None, fw_stepsize_rule = 1, gap_FW_tol = 0.05, targeted = False):
+class example_saver():
+    def __init__(self, num_adv_ex = 10, num_failed_ex = 10) -> None:
+        self.num_adv_ex = num_adv_ex
+        self.num_failed_ex = num_failed_ex
+        self.adv_ex = []
+        self.failed_ex = []
+        self.info = []
+        pass
+
+    def save_ex(self, perturbed_image, init_pred, final_pred, success):
+        self.info.append(init_pred)
+        # Save some adv examples for visualization later
+        if success and (len(self.adv_ex) < self.num_adv_ex):
+            ex = perturbed_image.squeeze().detach().cpu().numpy()
+            self.adv_ex.append( (init_pred.item(), final_pred.item(), ex) )
+        if (not success) and (len(self.failed_ex) < self.num_failed_ex):
+            ex = perturbed_image.squeeze().detach().cpu().numpy()
+            self.failed_ex.append( (init_pred.item(), final_pred.item(), ex) )
+
+
+def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw', early_stopping = None, fw_stepsize_rule = 1, gap_FW_tol = 0.05, targeted = False, ex_saver=None, norm_p=-1):
     testloader = target_model.testloader
     model = target_model.model
 
@@ -123,7 +203,7 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
             criterion = AdversarialLoss(target_model.num_classes, specific_label=adv_target)
         else:
             criterion = AdversarialLoss(target_model.num_classes)
-        lmo = LMO(epsilon, x0_denorm)
+        lmo = LMO(epsilon, x0_denorm, norm_p)
         stepsize_method = stepsize(model, fw_stepsize_rule, x0_denorm, ls_criterion=criterion, ls_target=target)
         attackStep = AttackStep(method, epsilon, x0_denorm, lmo, stepsize_method)
         #x_t.requires_grad = True  #Set requires_grad attribute of tensor. Important for Attack
@@ -165,48 +245,20 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
             output = model(x_t)
             info['l_inf'] = torch.max(torch.abs(x0_denorm - perturbed_image)).item()
             info['mdlLoss'] = loss.item()
+
             # Check for success
             final_pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
             if final_pred.item() == target.item():
                 success = False
                 first_success = False
-                # if t == num_fw_iter - 1:
-                #     correct += 1
-                # Special case for saving 0 epsilon examples
-                if epsilon == 0 and len(adv_examples) < 5:
-                    adv_ex = perturbed_image.squeeze().detach().cpu().numpy()
-                    adv_examples.append( (init_pred.item(), final_pred.item(), adv_ex) )
             else:
                 first_success =  not had_first_success
                 had_first_success = True
                 success = True
-                # Save some adv examples for visualization later
-                if len(adv_examples) < 5:
-                    adv_ex = perturbed_image.squeeze().detach().cpu().numpy()
-                    adv_examples.append( (init_pred.item(), final_pred.item(), adv_ex) )
-            if (early_stopping == 'pred') and first_success:
-                # The attack was successful so the classification was not correct
-                stop = True
-                stop_reason = 'pred'
-            elif (early_stopping == 'gap_FW') and (gap_FW < gap_FW_tol):
-                if not success: # attack failed
-                    correct +=1
-                stop = True
-                stop_reason = 'gap'
-            elif (t == num_fw_iter - 1): # Stop condition: Hit max FW iters
-                stop = True
-                stop_reason = 'max_iter'
-                if not success: # attack failed
-                    correct +=1
-            elif (early_stopping == 'gap_pairwise') and (info is not None) and (info['gap_pairwise'] < gap_FW_tol):
-                if not success: # attack failed
-                    correct +=1
-                stop = True
-                stop_reason = 'gap_pairwise'
-            else:
-                # no stop criteria met, continue
-                stop = False
-                stop_reason = None
+            stop, stop_reason, new_correct = early_stopper(early_stopping, t, success, first_success, info, gap_FW_tol, num_fw_iter, gap_FW)
+            correct += new_correct
+
+            # metric logging
             hist_iter = {
                 'example_idx':ex_num,
                 'FW_iter': t + 1, # original example is 0
@@ -219,10 +271,13 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
             }
             if targeted:
                 hist_iter['adv_target'] = adv_target
+                info['targeted_success'] = (final_pred.item() == adv_target)
             if info is not None:
                 hist_iter.update(info) # some methods output dict containing info at each step
             hist.append(hist_iter)
             if stop:
+                if ex_saver is not None:
+                    ex_saver.save_ex(perturbed_image, target, final_pred, success)
                 break
         ex_num += 1
         if ex_num >= num_test: # limit test set for speed

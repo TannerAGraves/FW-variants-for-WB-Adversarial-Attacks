@@ -11,6 +11,27 @@ Satisifies definition of dual by convexity and falling under first order approxi
 Point: FW vs projected gradient comparison. FW subproblems are linear proj grad problems are quadratic.
 
 # Paper 2: FW_variants - On the Global Linear Convergence of Frank-Wolfe Optimization Variants
+The problem with FW is that it exhibits slow (sublinear) convergence rate when solution lies on the boundry
+Adding the ability to take away steps allows for approaching optimum on boundry quicker, avoiding osicilation observed in base FW caused by alternating FW verticies.  
+Assuming weak convexity assume linear convergence rate.  
+Def:
+Convexity:![alt text](image.png)  
+Strong convexity: ![alt text](image-1.png)  
+Difference: Convexity just says that function is below line between any two points. 
+Strong convexity states that line moves away by quadratic margin.
+
+Varients very useful in the following:
+- flow polytope
+- marginal polytope
+- sparse problems
+
+interesting thing about PGD: has accelerated effect where rate becomes linear for strongly convex objective
+
+**Paper result**: FW away and FW pair both linear for strongly convex function over polytope.  
+
+Away step removes weight from bad atoms
+FW has linear convergence rate when point is in interior
+
 
 # Paper 3: FW_survey - Frank–Wolfe and friends: a journey into projection-free first-order optimization methods
 - Paper by Rinaldi, et. al.  

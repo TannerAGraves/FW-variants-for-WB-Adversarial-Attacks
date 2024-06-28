@@ -29,6 +29,7 @@ def fw_step(x_t, epsilon, g_t, x0, stepsize_method):
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     #gap_FW = torch.sum(d_t * g_t).item()#torch.dot(d_t, g_t)
     gap_FW = torch.sum(-d_t * g_t).item()
+    info['gap_FW'] = gap_FW
     return perturbed_image, gap_FW, info
 
 def fw_step_momentum(x_t, epsilon, g_t, m_t_last, x0, stepsize_method, momentum = 0.2):

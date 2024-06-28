@@ -1,7 +1,8 @@
 \documentclass{article}
 \usepackage{graphicx} % Required for inserting images
-%\usepackage{algorithm}
-%\usepackage{algpseudocode}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage{mathrsfs}
 
 \title{Comparison of Frank-Wolfe Varients for White-Box Adversarial Attacks}
@@ -12,16 +13,93 @@
 
 \maketitle
 
+\section{Abstract}
+With deep neural networks becoming ubiquitous in application, adversarial attacks have recieved much attention, as it has proved remarkably easy to create adversarial examples- genuine data that undergoes a minimal and unobtrusive corruption process inorder to maximally harm the performance of a model. Access to a models architecture can enable white-box attacks, where gradients of loss with respect to input examples are exploided to create adversarial examples. The requirement that examples be minimally preturbed is a constraint on the optimization. The ability of Frank-wolf and vairents have gathered much attention for their ability to be efficiently create adversarial examples while staying in a constraint set. In the paper we introduce discuss the application of Frank-Wolfe and two varients to this non-convex constrained optimization problem. Furthermore we discuss popular optimzations and their effect convergence and attack efficacy, comparing performance on attacks on models trained on MNSIT, FashionMNIST, and CFAIR-10 datasets. Finally, there is a discussion of the theoretical underpinnings of each algorithim.
+
 \section{Introduction}
-What are Adversarial attacks\\
-Problem statement\\
-Type of Norms
+This is typically stated as the following constrained optimization problem:
+\begin{equation}
+\begin{aligned}
+\min_x \quad & f(x)\\
+\text{s.t.} \quad & ||x||_p \leq \epsilon
+\end{aligned}
+\end{equation}
+% targeted / untargeted
+In the case of untargeted attacks on a classifier, we perturb an example with the aim it be incorrectly predicted as any other class. Here $f(x)$ is the loss function of the attacked model $-\ell(x, \hat{y})$. In the case of targeted attacks, we aim to maximize the liklihood of another class $y \neq \hat{y}$. The cost then is $f(x) = \ell(x, y)$. We have implemented both targeted and untargeted attacks, and come to focus on targeted attacks as the algorithioms are seen to require more iterations to converge. 
+%constraint set
+The $L_p$ constraint $||x||_p \leq \epsilon$ directly restricts the size of perturbations made the to the example. An inherient problem of DNNs is often attacks can be consistently sucessful even with very small, even imperceptable $\epsilon$. Different choices of $p$ may be made giving $||x||_p = (\sum_i{x_i^p})^{1/p}$. Or commonly, as we use here $L_\infty(x) = \max_i |x_i|$. 
+We define the constraint set $\mathcal{M} = \{x : L_p(x) \leq \epsilon\}$. 
+Of pirticular note is when $\mathcal{M}$ is a polytope, as is the case when $p \in \{1, \infty\}$. This corresponds to models making perturbations that are either sparse or have a maximal distubance along each element. In these cases, the constraintset can be expressed as the convex combination of a finite set of verticies $\mathcal{M} = \text{Conv}\{\mathcal{A}\}$. This will be of pirticular relevance in the discussion of Away-step and pairwise varients. Otherwise, $\mathcal{A}$ is taken to be the boundry of $\mathcal{M}$.\break
+%Why is constraints an issue
+The constrained nature of this problem limits the applicabiliy of a method like gradient descent, and requires integrating knowledge of the constraint space for effective optimization. Methods like Fast Signed Gradient attacks and projected gradient descent are popular choices, but either create unsifisticated adversarial examples or require wasteful prejection onto the constraint space. 
+
+% LMO
+We explore Frank-Wolfe variants which are well suited to this problem by ensuring feasibility within the constraint set at each iteration with the efficient solving of a Linear Minimization Oracle (LMO). 
+$$
+LMO_\mathcal{A}(\nabla f(x_t)) \in \arg \min_{x \in \mathcal{A}} \langle \nabla f(x_t), x\rangle
+$$
+The LMO is responsible for solving what is called the "Frank-Wolfe Subproblem" and at each iteration provides and optimal $s_t$ such that updating $x_{t+1}$ to move in the direction of $s_t$ will remain in $\mathcal{M}$ Given it moves no more than some maximum stepsize. By solving the LMO efficiently, the algorithm ensures that each iteration makes significant progress towards the optimal solution while respecting the constraints, thereby maintaining feasibility and accelerating convergence. 
+% LMO colsed form solutions
+Efficient solving of the LMO requires exploiting the structure of the constraint set $\mathcal{M}$. In the case of the $L_\infty$ norm it has closed form solution:
+$$LMO_\mathcal{A} = s_t = -\epsilon \text{sign}(\nabla f(x_t)) + x_0$$
+%LMO complexity - FW.pdf
+
+
+
 
 \section{Algorithims}
 \subsection{Frank-Wolfe}
+\begin{algorithm}
+\caption{An algorithm with caption}\label{alg:cap}
+\begin{algorithmic}[1]
+\Require maximum iterations $T$, stepsizes $\{\gamma_t\}$, convergence tolerence $\delta$
+\Ensure $y = x^n$
+\State $x_0 = x_{\text{ori}}$
+\For{$t = 1,...,T$}
+	% for the sets use the notation from FW_varients for consistency
+	% M is the condstrained space of the attack and A is the set of vertieces
+	\State $s_t = {\arg \min}_{x\in\mathcal{M}} \langle x, \nabla f(x_t)\rangle$ \Comment{LMO step}
+	\State $d_t = s_t - x_t$
+	\State $x_{t+1} = x_t + \gamma_t d_t$
+	% TODO: maybe mention FW gap converg crit here
+	\If{$\langle d_t, -\nabla f(x)\rangle < \delta$} \text{return} \hfill \Comment{FW gap convergence criterion}
+	\EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+Observing oscilation in Frank Wolfe convergence is common and consequence of optimal points lying on a face of $\mathcal{M}$. Since at each iteration the method is moving twrods a vetex of $\mathcal{M}$, which we denote the set of as $\mathcal{S}$, the method "zigzags", moving twords different points in effort to gradually approach the face on which the optimum lies. We implement varients that aim to address this problem to provide better convergece. The simplest of which is adding momentum to standerd frank wolf which replaces the gradient in the LMO calulation in line $(4)$ with a momentum term $m_t  = \beta m_{t-1} + (1-\beta) \nabla f(x_t)$ and initialize $m_0 = \nabla f(x_0)$. By considering this exponentially weighted average of gradient information, momentum varients are emperically observed to have nicer convergence. 
+$$s_t = -\epsilon \text{ sign}(\nabla f(x)) +  x_\text{ori}$$
+% TODO: define duality and convergence criterion as in attacks.pdf, some more details in FW.pdf but less relevant.
+The convergence criterion used here is the Frank
+\subsection{Away-Step Frank-Wolfe}
+\begin{algorithm}
+\caption{Away-Step FW for Adversarial Attacks}\label{alg:cap}
+\begin{algorithmic}[1]
+\Require maximum iterations $T$, stepsizes $\{\gamma_t\}$, convergence tolerence $\delta$, $x_0 \in \mathcal{M}$
+\State Define $S_0 := \{x_0\}$ with $\alpha_{x_0} = 1$
+\For{$t = 1,...,T$}
+	\State $s_t  := {\arg \min}_{x\in\mathcal{M}} \langle x, \nabla f(x_t)\rangle$ \Comment{LMO step}
+	\State $d_t^{\text{FW}} := s_t - x_t$
+	\State $v_t  := {\arg \max}_{v\in S_t} \langle v, \nabla f(x_t)\rangle$
+	\State $d_t^{\text{A}} := x_t - v_t$
+	% for the sets use the notation from FW_varients for consistency
+	% M is the condstrained space of the attack and A is the set of vertieces
+	\If{$\langle d_t^\text{FW}, -\nabla f(x)\rangle < \delta$} \text{return} $x_t$ \hfill \Comment{FW gap convergence criterion}
+	\EndIf
+	\If $\langle d_t^\text{FW}, -\nabla f(x)\rangle < \langle d_t^\text{A}, -\nabla f(x)\rangle$
+		\State $d_t = d_t^\text{FW}$, $\gamma_\text{max} := 1$
+	\Else
+		\State $d_t := d_t^\text{A}$, $\gamma_\text{max} := \frac{\alpha_{v_t}}{1- \alpha_{v_t}}$
+	\EndIf
+	\State $x_{t+1} = x_t + \gamma_t d_t$
+	\State Update $\alpha$, $S_{t+1}$ s.t. $\langle \alpha, S_{t+1}\rangle = x_{t+1}$ (See below)
+\EndFor
+\end{algorithmic}
+\end{algorithm}
 
 \subsection{Pairwise Frank-Wolfe}
-\subsection{Away-Step Frank-Wolfe}
+
 \section{Results}
 Introduce Datasets
 \subsection{Momentum}
@@ -29,16 +107,23 @@ Introduce Datasets
 It is worth noting that Convergence Criterion For Frank-Wolfe is a somewhat imprecise surrogate for success in the context of adversarial attacks. For many examples, we find that Frank-Wolfe methods create successful attacks several iterations before convergence. We attribute this to an incorrect class probability being grater than the correct class being sufficient for success where convergence is reached when the new output class probability is maximized. 
 We observe the convergence of the Frank-Wolfe gap 
 \subsection{Stepsize}
-The methods for stepsize where implemented: fixed, where $\gamma_t = 1$ for all $t$, linesearching which solves $\arg \min _\gamma f(x + \gamma d_t)$ where $\gamma \in (0,1]$, and decaying stepsize $\gamma_t = \frac{2}{t + 2}$.
+The methods for stepsize were implemented as follows: Lipschitz constant-based (fixed) stepsize, where the stepsize is determined using the Lipschitz constant \(L\) with \(\gamma_t = \frac{1}{L}\); exact inesearching, which solves the optimization problem \(\arg \min_{\gamma} f(x + \gamma d_t)\) where \(\gamma \in (0,1]\); Decaying stepsize, where the stepsize decreases over time according to \(\gamma_t = \frac{2}{t + 2}\); and Armijo-rule search, which chooses \(\gamma_t\) to satisfy the Armijo rule \(f(x + \gamma_t d_t) \leq f(x) + \delta \gamma_t \nabla f(x)^T d_t\), where \(delta \in (0,1)\) controls the sufficient decrease condition.
+
+
+
 \subsection{$\epsilon$ Choice}
 Create plot showing how accurate attacks are with different $\epsilon$ constraints.
 \section{Convergence Analysis}
-The constrained nature of the Adversarial Attack problem means that the norm of the gradient $||\nabla_x f(x)||$ is not a sutible convergence criterion as boundry points need not have $0$ gradient. 
-The Frank-Wolfe gap provides provides measure of both optimality and point feasibility. It is a measure of the maximum improvement over the current iteration $x_t$ within the constraints $C$ and defined
+The constrained nature of the Adversarial Attack problem means that the norm of the gradient $||\nabla_x f(x)||$ is not a suitable convergence criterion as boundary points need not have $0$ gradient. 
+The Frank-Wolfe gap provides provides measure of both optimality and point feasibility. It is a measure of the maximum improvement over the current iteration $x_t$ within the constraints $C$ and defined in terms of the FW direction: 
 $$g(x_t) = \max_{x\in C} \langle x - x_t, -\nabla f(x_t)\rangle$$
-We always have $g(x_t) \geq 0$ and its usefullness as a convergence criterion comes from $g(x_t) = 0$ iff $x_t$ is a stationary point. 
+We always have $g(x_t) \geq 0$ and its usefulness as a convergence criterion comes from $g(x_t) = 0$ iff $x_t$ is a stationary point. 
 % See what the slides say about stationary points
-For convex problems, we would have that the linear approximation $f(x_t) + \langle x_t - x, -\nabla f(x_t) \rangle \geq f(x)$. However, the loss of DNNs as commnly the subject of adversarial attacks, are highly non-convex, making this only true locally. This complicate the convergence of Frank-Wolfe in this application, but it is still gaurenteed.
+For convex problems, we would have that the linear approximation $f(x_t) + \langle x_t - x, -\nabla f(x_t) \rangle \geq f(x)$. However, the loss of DNNs as commonly the subject of adversarial attacks, are highly non-convex, making this only true locally. This complicate the convergence of Frank-Wolfe in this application, as we are gaurenteed not a global optimum or a sucessful attack, but convergence to a stationary point. 
+
+For the following proof we assume that $f$ has L-Lipschitz continuous gradient on M. 
+This is often the case for DNN %Santurkar et al. 2018, mentioned in attacks.pdf
+Lipshitz continuious gradient gives us bound on curvature constant $C_f$ % (eq5) https://arxiv.org/pdf/1607.00345
 
 \subsection{Frank-Wolfe}
 \subsection{Pairwise Frank-Wolfe}
