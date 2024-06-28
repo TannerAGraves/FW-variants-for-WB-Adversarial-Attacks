@@ -42,8 +42,10 @@ The LMO is responsible for solving what is called the "Frank-Wolfe Subproblem" a
 % LMO colsed form solutions
 Efficient solving of the LMO requires exploiting the structure of the constraint set $\mathcal{M}$. In the case of the $L_\infty$ norm it has closed form solution:
 $$LMO_\mathcal{A} = s_t = -\epsilon \text{sign}(\nabla f(x_t)) + x_0$$
+But can be given generally for any choice of $p \in [1, \infty]$.
+$$LMO_\mathcal{A}_i = -\epsilon \text{sign}(\nabla f(x_t))$$
 %LMO complexity - FW.pdf
-
+This is clearly of $O(n)$ complexity where $n$ is the number of elements in the gradient. This can be intrepreted as defining an attack direction where each element is the maximum allowable perturbation $\pm \epsilon$ according to the gradient. With one iteration, this is exactly the outcome of a Fast Signed Gradient Attack. At each iteration, we can see that the LMO will give a vertex on the boundry of the constraint set $\mathcal{M}$ which was optimally chosen to be as close to the true gradient as possible while permitting subsequent iterations staty within the feasible set.
 
 
 

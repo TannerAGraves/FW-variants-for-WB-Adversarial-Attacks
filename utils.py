@@ -32,7 +32,7 @@ class LMO:
     def _LMO_L1(self, g_t):
         s_t = torch.zeros_like(g_t)
         for i in range(g_t.size(0)):
-            max_abs_index = torch.argmax(torch.abs(g_t[i]))
+            max_abs_index = torch.argmax(torch.norm(torch.abs(g_t[i]), p=2, dim=1))
             s_t[i][max_abs_index] = -self.epsilon * g_t[i][max_abs_index].sign()
         s_t += self.x0
         return s_t
@@ -62,26 +62,27 @@ class AdversarialLoss(nn.Module):
         - loss (torch.Tensor): The computed adversarial loss.
         """
         batch_size = outputs.size(0)
-        # if self.specific_label is not None:
-        #     # Targeting a specific incorrect label
-        #     incorrect_labels = torch.full_like(targets, self.specific_label)
-        #     mask = (incorrect_labels != targets).float()
-        #     specific_log_probs = F.log_softmax(outputs, dim=1).gather(1, incorrect_labels.unsqueeze(1)).squeeze(1)
-        #     loss = -specific_log_probs * mask
-        #     return loss.mean()
         if self.specific_label is not None:
             # Targeting a specific incorrect label
-            specific_labels = torch.full_like(targets, self.specific_label)
-            
-            # Compute log probabilities
-            log_probs = F.log_softmax(outputs, dim=1)
-            
-            # Get the log probabilities of the specific label
-            specific_log_probs = log_probs.gather(1, specific_labels.unsqueeze(1)).squeeze(1)
-            
-            # Compute the negative log likelihood
-            loss = -specific_log_probs
+            incorrect_labels = torch.full_like(targets, self.specific_label)
+            mask = (incorrect_labels != targets).float()
+            specific_log_probs = F.log_softmax(outputs, dim=1).gather(1, incorrect_labels.unsqueeze(1)).squeeze(1)
+            loss = -specific_log_probs * mask
             return loss.mean()
+
+        # if self.specific_label is not None:
+        #     # Targeting a specific incorrect label
+        #     specific_labels = torch.full_like(targets, self.specific_label)
+            
+        #     # Compute log probabilities
+        #     log_probs = F.log_softmax(outputs, dim=1)
+            
+        #     # Get the log probabilities of the specific label
+        #     specific_log_probs = log_probs.gather(1, specific_labels.unsqueeze(1)).squeeze(1)
+            
+        #     # Compute the negative log likelihood
+        #     loss = -specific_log_probs
+        #     return loss.mean()
         else:
             # Averaging over all incorrect labels
             log_probs = F.log_softmax(outputs, dim=1)
