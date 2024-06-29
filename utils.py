@@ -15,7 +15,7 @@ class LMO:
         if p == -1:
             self.method = self._LMO_inf
         elif p == 1:
-            self.method = self._LMO_L1
+            self.method = self.l_1
         elif p > 1:
             self.method = self._LMO_Lp
         else:
@@ -36,6 +36,12 @@ class LMO:
             s_t[i][max_abs_index] = -self.epsilon * g_t[i][max_abs_index].sign()
         s_t += self.x0
         return s_t
+    
+    def l_1(self, g_t):
+        index = torch.argmax(torch.abs(g_t))
+        s_t = torch.zeros_like(g_t)
+        s_t[index] = -self.epsilon * torch.sign(g_t[index]) # check if sign of eps is correct
+        return s_t + self.x_0
 
 class AdversarialLoss(nn.Module):
     def __init__(self, num_classes, specific_label=None):

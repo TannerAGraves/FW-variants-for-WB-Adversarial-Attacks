@@ -56,3 +56,9 @@ Subproblem becomes instance of Fast Signed Gradient Problem (FGSM). But frank-wo
 - states that momentum leads to faster convergence
 - problem is not convex, so cannot use grad magnitude as convergence criteria
 - need to use dual gap as convergence criteria
+
+# Misc
+Rinaldi's paper on convergence of Away step for non-convex
+Active set complexity of the away-step Frank–Wolfe algorithm
+
+Good example of how to present results: https://arxiv.org/pdf/2102.07360

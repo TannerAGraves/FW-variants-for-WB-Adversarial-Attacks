@@ -226,9 +226,8 @@ class AttackStep:
         #self.A_t = [a + gamma if i == s_t_idx else a - gamma for i, a in enumerate(self.A_t)]
         self.A_t[s_t_idx] += gamma
         self.A_t[v_t_idx] -= gamma
-        info['A_t'] = copy.deepcopy(self.A_t)
         
-        tol = 0.00001
+        tol = 0.001
         i=0
         while i < len(self.A_t):
             alpha_v_i = self.A_t[i]
@@ -245,6 +244,7 @@ class AttackStep:
                     pass
             else:
                 i += 1
+        info['A_t'] = copy.deepcopy(self.A_t)
         return self.S_t, self.A_t
 
     def fw_step_pairwise(self, x_t, g_t):
@@ -266,7 +266,6 @@ class AttackStep:
         max_step = alpha_v_t
         d_t_AWAY = x_t - v_t
         self.away_costs = away_costs
-        debug_info['away_costs'] = copy.deepcopy(away_costs)
 
         gap_FW = torch.sum(-g_t * d_t_FW).item()
         gap_AWAY = torch.sum(-g_t * d_t_AWAY).item()
@@ -279,7 +278,7 @@ class AttackStep:
         self.S_t, self.A_t = self.update_active_pair(fw_stepsize, s_t, v_t_idx, info)
         perturbed_image_step = x_t + fw_stepsize * d_t
         perturbed_image_alpha = sum([alpha * v for alpha, v in zip(self.A_t, self.S_t)])
-        if use_conv_comb_x_t: # use x_t = A_t.T * S_t or x_t + gamma * d_t ?
+        if use_conv_comb_x_t: 
             perturbed_image = perturbed_image_alpha
         else:
             perturbed_image = perturbed_image_step

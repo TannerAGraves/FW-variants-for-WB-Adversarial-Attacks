@@ -42,8 +42,8 @@ The LMO is responsible for solving what is called the "Frank-Wolfe Subproblem" a
 % LMO colsed form solutions
 Efficient solving of the LMO requires exploiting the structure of the constraint set $\mathcal{M}$. In the case of the $L_\infty$ norm it has closed form solution:
 $$LMO_\mathcal{A} = s_t = -\epsilon \text{sign}(\nabla f(x_t)) + x_0$$
-But can be given generally for any choice of $p \in [1, \infty]$.
-$$LMO_\mathcal{A}_i = -\epsilon \text{sign}(\nabla f(x_t))$$
+%But can be given generally for any choice of $p \in [1, \infty]$.
+%$$LMO_\mathcal{A}_i = -\epsilon \text{sign}(\nabla f(x_t))$$
 %LMO complexity - FW.pdf
 This is clearly of $O(n)$ complexity where $n$ is the number of elements in the gradient. This can be intrepreted as defining an attack direction where each element is the maximum allowable perturbation $\pm \epsilon$ according to the gradient. With one iteration, this is exactly the outcome of a Fast Signed Gradient Attack. At each iteration, we can see that the LMO will give a vertex on the boundry of the constraint set $\mathcal{M}$ which was optimally chosen to be as close to the true gradient as possible while permitting subsequent iterations staty within the feasible set.
 
@@ -70,10 +70,15 @@ This is clearly of $O(n)$ complexity where $n$ is the number of elements in the 
 \end{algorithmic}
 \end{algorithm}
 
-Observing oscilation in Frank Wolfe convergence is common and consequence of optimal points lying on a face of $\mathcal{M}$. Since at each iteration the method is moving twrods a vetex of $\mathcal{M}$, which we denote the set of as $\mathcal{S}$, the method "zigzags", moving twords different points in effort to gradually approach the face on which the optimum lies. We implement varients that aim to address this problem to provide better convergece. The simplest of which is adding momentum to standerd frank wolf which replaces the gradient in the LMO calulation in line $(4)$ with a momentum term $m_t  = \beta m_{t-1} + (1-\beta) \nabla f(x_t)$ and initialize $m_0 = \nabla f(x_0)$. By considering this exponentially weighted average of gradient information, momentum varients are emperically observed to have nicer convergence. 
-$$s_t = -\epsilon \text{ sign}(\nabla f(x)) +  x_\text{ori}$$
-% TODO: define duality and convergence criterion as in attacks.pdf, some more details in FW.pdf but less relevant.
-The convergence criterion used here is the Frank
+Observing oscilation in Frank Wolfe convergence is common and consequence of optimal points lying on a face of $\mathcal{M}$. Since at each iteration the method is moving twords a vetex of polytope $\mathcal{M}$, in $\mathcal{S}$, the method "zigzags", moving twords different points in effort to gradually approach the face on which the optimum lies. in the convex case, Frank Wolfe is seen to have linear complexity when optimal point $x^*$ lies in the interior of $\mathcal{M}$, the osicilation causes sublinear convergence when $x^*$ on the boundry.
+%citation needed
+ We implement varients that aim to address this problem to provide better convergence. The simplest of which is adding momentum to standerd frank wolf which replaces the gradient in the LMO calulation in line $(4)$ with a momentum term $m_t  = \beta m_{t-1} + (1-\beta) \nabla f(x_t)$ and initialize $m_0 = \nabla f(x_0)$. By considering this exponentially weighted average of gradient information, momentum varients are emperically observed to have nicer convergence. 
+$$s_t = -\epsilon \text{ sign}(\nabla f(x)) +  x_0$$
+
+The FW algorthim has a sueful intrepretation that serves as basis for the following varients: Away-Step FW and Pairwise FW. Namely that at each iteration $x_t$ is perturbed in some direction $s_t$, making $x_{t+1}$ a convex combination of $x_t$ and $s_t$. We record these directions in an active set $S_{t+1} = S_t \bigcup \{s_t\}$ and observe that initially $x_0$ is a convex combination of of active set $S_0 = \{x_0\}$. Then by induction, $x_t$ is a convex combination of directions in $S_t$, admitting coefficients $alpha$ such that $\sum \alpha_{s_i} s_i = x_t$.
+Each iteration of the FW algorithim is seen to increase or introduce the contribution of $s_t$ in the convex combination while shrink the $\alpha$ coefficients of all other verticies, or atoms uniformly.
+The innovation of the Away-Step and Pairwise varient is to recognize contribution of "bad atoms" can prevent convergence to an optimum on the boundry. These varients more directly diminish such atoms contributions by either taking steps away from selected atoms, or transfering mass between two selected atoms at each iteration as the case with the pairwise varient.
+
 \subsection{Away-Step Frank-Wolfe}
 \begin{algorithm}
 \caption{Away-Step FW for Adversarial Attacks}\label{alg:cap}
