@@ -272,7 +272,7 @@ class AttackStep:
         info['gap_FW'] = gap_FW
         info['gap_AS'] = gap_AWAY
 
-        d_t = s_t - v_t
+        d_t = d_t_FW + d_t_AWAY #s_t - v_t
         fw_stepsize = self.stepsize_method.get_stepsize(x_t, d_t, max_step)
 
         self.S_t, self.A_t = self.update_active_pair(fw_stepsize, s_t, v_t_idx, info)

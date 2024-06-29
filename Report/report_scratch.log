@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  29 JUN 2024 13:37
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  29 JUN 2024 15:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -161,7 +161,11 @@ File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count289
 \l__pdf_internal_box=\box56
 )
-(./report_scratch.aux)
+(./report_scratch.aux
+
+LaTeX Warning: Label `alg:cap' multiply defined.
+
+)
 \openout1 = `report_scratch.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 12.
@@ -178,8 +182,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 12.
 LaTeX Font Info:    ... okay on input line 12.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 12.
 LaTeX Font Info:    ... okay on input line 12.
-
-(c:/texlive/2024/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+ (c:/texlive/2024/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count290
 \scratchdimen=\dimen153
@@ -218,14 +221,16 @@ File: ursfs.fd 1998/03/24 rsfs font definition file (jk)
 
 [4]
 
-[5] (./report_scratch.aux)
+[5]
+
+[6] (./report_scratch.aux)
  ***********
 LaTeX2e <2024-06-01>
 L3 programming layer <2024-05-27>
  ***********
 
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
@@ -235,7 +240,7 @@ Here is how much of TeX's memory you used:
  25607 multiletter control sequences out of 15000+600000
  565060 words of font info for 63 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 57i,9n,65p,1174b,327s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 57i,9n,65p,1174b,331s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><c:/tex
 live/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/texlive/2024
 /texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2024/texmf-di
@@ -250,10 +255,10 @@ st/fonts/type1/public/amsfonts/cm/cmr7.pfb><c:/texlive/2024/texmf-dist/fonts/ty
 pe1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/
 amsfonts/cm/cmsy10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmsy7.pfb>
-Output written on report_scratch.pdf (5 pages, 190874 bytes).
+Output written on report_scratch.pdf (6 pages, 193507 bytes).
 PDF statistics:
- 95 PDF objects out of 1000 (max. 8388607)
- 57 compressed objects within 1 object stream
+ 98 PDF objects out of 1000 (max. 8388607)
+ 59 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
