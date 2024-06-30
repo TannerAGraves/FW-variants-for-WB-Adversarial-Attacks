@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  30 JUN 2024 19:00
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  30 JUN 2024 19:13
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -280,13 +280,13 @@ Package pdftex.def Info: plots/adv_ex.png  used on input line 143.
 File: plots/mdl_compare_avg_FWgap_by_iter.png Graphic file (type png)
 <use plots/mdl_compare_avg_FWgap_by_iter.png>
 Package pdftex.def Info: plots/mdl_compare_avg_FWgap_by_iter.png  used on input
- line 178.
+ line 179.
 (pdftex.def)             Requested size: 241.49895pt x 188.31882pt.
 
 
-[7 <./plots/mdl_compare_avg_FWgap_by_iter.png>]
+[7]
 
-[8] (./report_scratch.aux)
+[8 <./plots/mdl_compare_avg_FWgap_by_iter.png>] (./report_scratch.aux)
  ***********
 LaTeX2e <2024-06-01>
 L3 programming layer <2024-05-27>
@@ -318,7 +318,7 @@ st/fonts/type1/public/amsfonts/cm/cmr7.pfb><c:/texlive/2024/texmf-dist/fonts/ty
 pe1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/
 amsfonts/cm/cmsy10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmsy7.pfb>
-Output written on report_scratch.pdf (8 pages, 297890 bytes).
+Output written on report_scratch.pdf (8 pages, 297987 bytes).
 PDF statistics:
  112 PDF objects out of 1000 (max. 8388607)
  66 compressed objects within 1 object stream
