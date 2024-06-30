@@ -1,12 +1,12 @@
-
-
-\section{Abstract}
-With deep neural networks becoming ubiquitous in application, adversarial attacks have\documentclass{article}
+\documentclass{article}
 \usepackage{graphicx} % Required for inserting images
 \usepackage{amsmath}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{mathrsfs}
+\usepackage{array} % For better table alignment
+\usepackage{booktabs}
+\usepackage{multirow} % For multi-row cells
 
 \title{Comparison of Frank-Wolfe Varients for White-Box Adversarial Attacks}
 \author{Tanner Aaron Graves - 2073559\and Alessandro Pala - 2107800}
@@ -14,7 +14,9 @@ With deep neural networks becoming ubiquitous in application, adversarial attack
 
 \begin{document}
 
-\maketitle recieved much attention, as it has proved remarkably easy to create adversarial examples- genuine data that undergoes a minimal and unobtrusive corruption process inorder to maximally harm the performance of a model. Access to a models architecture can enable white-box attacks, where gradients of loss with respect to input examples are exploided to create adversarial examples. The requirement that examples be minimally preturbed is a constraint on the optimization. The ability of Frank-wolf and vairents have gathered much attention for their ability to be efficiently create adversarial examples while staying in a constraint set. In the paper we introduce discuss the application of Frank-Wolfe and two varients to this non-convex constrained optimization problem. Furthermore we discuss popular optimzations and their effect convergence and attack efficacy, comparing performance on attacks on models trained on MNSIT, FashionMNIST, and CFAIR-10 datasets. Finally, there is a discussion of the theoretical underpinnings of each algorithim.
+\maketitle 
+\section{Abstract}
+With deep neural networks becoming ubiquitous in application, adversarial attacks haverecieved much attention, as it has proved remarkably easy to create adversarial examples- genuine data that undergoes a minimal and unobtrusive corruption process inorder to maximally harm the performance of a model. Access to a models architecture can enable white-box attacks, where gradients of loss with respect to input examples are exploided to create adversarial examples. The requirement that examples be minimally preturbed is a constraint on the optimization. The ability of Frank-wolf and vairents have gathered much attention for their ability to be efficiently create adversarial examples while staying in a constraint set. In the paper we introduce discuss the application of Frank-Wolfe and two varients to this non-convex constrained optimization problem. Furthermore we discuss popular optimzations and their effect convergence and attack efficacy, comparing performance on attacks on models trained on MNSIT, FashionMNIST, and CFAIR-10 datasets. Finally, there is a discussion of the theoretical underpinnings of each algorithim.
 
 \section{Introduction}
 This is typically stated as the following constrained optimization problem:
@@ -124,10 +126,40 @@ Introduce Datasets
 \subsection{Stepsize}
 The methods for stepsize were implemented as follows: Lipschitz constant-based (fixed) stepsize, where the stepsize is determined using the Lipschitz constant \(L\) with \(\gamma_t = \frac{1}{L}\); exact inesearching, which solves the optimization problem \(\arg \min_{\gamma} f(x + \gamma d_t)\) where \(\gamma \in (0,1]\); Decaying stepsize, where the stepsize decreases over time according to \(\gamma_t = \frac{2}{t + 2}\); and Armijo-rule search, which chooses \(\gamma_t\) to satisfy the Armijo rule \(f(x + \gamma_t d_t) \leq f(x) + \delta \gamma_t \nabla f(x)^T d_t\), where \(delta \in (0,1)\) controls the sufficient decrease condition.
 
-
-
 \subsection{$\epsilon$ Choice}
 Create plot showing how accurate attacks are with different $\epsilon$ constraints.
+
+\subsection{Varients}
+
+% DUMMY VALUES NEED TO BE CHANGED
+\begin{table}[h]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{@{}lcccccccc@{}}
+        \toprule
+        \multirow{2}{*}{\textbf{Algorithm}} & \multicolumn{2}{c}{\textbf{MNIST}} & \multicolumn{2}{c}{\textbf{F-MNIST}} & \multicolumn{2}{c}{\textbf{CIFAR-10}} \\
+        \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
+        & \textbf{Success (\%)} & \textbf{Avg Iter} & \textbf{Success (\%)} & \textbf{Avg Iter} & \textbf{Success (\%)} & \textbf{Avg Iter} \\
+        \midrule
+        Frank-Wolfe (FW) & 85.4 & 50 & 86.1 & 48 & 84.7 & 52 \\
+        Away-Step FW (AFW) & 87.3 & 45 & 88.0 & 43 & 86.9 & 47 \\
+        Pairwise FW (PFW) & 86.5 & 47 & 87.2 & 44 & 85.8 & 49 \\
+        \bottomrule
+    \end{tabular}
+    }
+    \caption{Accuracies and Average Iterations of Different Frank-Wolfe Algorithm Variants on Three Datasets}
+    \label{tab:algorithm_performance}
+\end{table}
+
+%DUMMY PLOT REPLACE WITH FINAL RESULTS
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{plots/mdl_compare_avg_FWgap_by_iter.png}
+    \caption{Average $g^\text{FW}_t$ for each algorithim by iteration.}
+    \label{fig:converge-compare}
+\end{figure}
+
+
 \section{Convergence Analysis}
 % Proof adaptaed from https://arxiv.org/pdf/1607.00345
 % Convergence Rate of Frank-Wolfe for Non-Convex Objectives (Lacoste-Julien 2016)
