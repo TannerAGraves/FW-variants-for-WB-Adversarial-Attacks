@@ -13,6 +13,7 @@ class LeNet():
     def __init__(self, weigths_pth = "models/lenet5_model.pth"):
         self.batch_size = 64
         self.num_classes = 10
+        self.classes = [str(i) for i in range(10)]
         self.learning_rate = 0.001
         self.num_epochs = 10
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

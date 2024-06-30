@@ -132,8 +132,17 @@ Our three different models where pretrained on datasets with differing image sca
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{plots/eps_choice.png}
-    \caption{Effect of $\epsilon$ on attack success for untargeted FW for each dataset.}
+    \caption{Effect of $\epsilon$ on attack success for untargeted FW for each dataset with $L_\infty$ constraint.}
     \label{fig:converge-compare}
+\end{figure}
+
+As figure \ref{fig:converge-compare} shows, the different models have vastly different sensitivities to adversarial attacks. LeNet is the most robust of the three requiring large maximum perturbations for reliable attakcs. The larger, more complex models can be reliably attacked with imperceptible examples in the case of ResNet or borderline perceptible in the case of the FMNIST model. Representitive attacks are shown in figure 2.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{plots/adv_ex.png}
+    \caption{Representative attacks on LeNet, FMNIST, and ResNet 18.}
+    \label{fig:adv_ex}
 \end{figure}
 
 \subsection{Targeted vs. Untargeted Attacks}
@@ -163,7 +172,7 @@ For example, attacks on a set of $100$ examples with ResNet18 and $\epsilon = 0.
     \label{tab:algorithm_performance}
 \end{table}
 
-%DUMMY PLOT REPLACE WITH FINAL RESULTS
+%REPLACE WITH FINAL RESULTS
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.7\textwidth]{plots/mdl_compare_avg_FWgap_by_iter.png}

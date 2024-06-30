@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  30 JUN 2024 14:35
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  30 JUN 2024 19:00
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -268,21 +268,25 @@ Package pdftex.def Info: plots/eps_choice.png  used on input line 134.
 
 
 [5]
-<plots/mdl_compare_avg_FWgap_by_iter.png, id=35, 556.0775pt x 433.62pt>
+<plots/adv_ex.png, id=35, 196.5744pt x 113.7048pt>
+File: plots/adv_ex.png Graphic file (type png)
+<use plots/adv_ex.png>
+Package pdftex.def Info: plots/adv_ex.png  used on input line 143.
+(pdftex.def)             Requested size: 345.0pt x 199.56932pt.
+
+
+[6 <./plots/eps_choice.png> <./plots/adv_ex.png>]
+<plots/mdl_compare_avg_FWgap_by_iter.png, id=41, 556.0775pt x 433.62pt>
 File: plots/mdl_compare_avg_FWgap_by_iter.png Graphic file (type png)
 <use plots/mdl_compare_avg_FWgap_by_iter.png>
 Package pdftex.def Info: plots/mdl_compare_avg_FWgap_by_iter.png  used on input
- line 169.
+ line 178.
 (pdftex.def)             Requested size: 241.49895pt x 188.31882pt.
 
 
-LaTeX Warning: `h' float specifier changed to `ht'.
+[7 <./plots/mdl_compare_avg_FWgap_by_iter.png>]
 
-
-
-[6 <./plots/eps_choice.png>]
-
-[7 <./plots/mdl_compare_avg_FWgap_by_iter.png>] (./report_scratch.aux)
+[8] (./report_scratch.aux)
  ***********
 LaTeX2e <2024-06-01>
 L3 programming layer <2024-05-27>
@@ -293,10 +297,10 @@ LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 2972 strings out of 473600
- 45924 string characters out of 5732738
+ 2980 strings out of 473600
+ 46096 string characters out of 5732738
  1939894 words of memory out of 5000000
- 25826 multiletter control sequences out of 15000+600000
+ 25834 multiletter control sequences out of 15000+600000
  565060 words of font info for 63 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  57i,11n,65p,1173b,324s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -314,10 +318,10 @@ st/fonts/type1/public/amsfonts/cm/cmr7.pfb><c:/texlive/2024/texmf-dist/fonts/ty
 pe1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/
 amsfonts/cm/cmsy10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmsy7.pfb>
-Output written on report_scratch.pdf (7 pages, 246311 bytes).
+Output written on report_scratch.pdf (8 pages, 297890 bytes).
 PDF statistics:
- 107 PDF objects out of 1000 (max. 8388607)
- 64 compressed objects within 1 object stream
+ 112 PDF objects out of 1000 (max. 8388607)
+ 66 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 11 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 16 words of extra memory for PDF output out of 10000 (max. 10000000)
 

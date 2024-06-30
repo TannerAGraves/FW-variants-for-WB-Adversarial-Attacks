@@ -172,20 +172,46 @@ class example_saver():
     def __init__(self, num_adv_ex = 10, num_failed_ex = 10) -> None:
         self.num_adv_ex = num_adv_ex
         self.num_failed_ex = num_failed_ex
+        self.adv_true = []
+        self.adv_pred = []
+        self.adv_x0 = []
+        self.adv_atk = []
+        self.adv_xt = []
+        self.adv_true_init_prob = []
+        self.adv_final_prob = []
         self.adv_ex = []
         self.failed_ex = []
         self.info = []
         pass
 
-    def save_ex(self, perturbed_image, init_pred, final_pred, success):
-        self.info.append(init_pred)
+    def save_ex(self, perturbed_image, x0, true, final_pred, success, true_class_prob0, pred_class_prob):
+        self.info.append(true)
+        
+        if (len(self.adv_ex) >= self.num_adv_ex) and (len(self.failed_ex) >= self.num_failed_ex):
+            return
+
+        atk = perturbed_image - x0
+        atk = atk.detach().squeeze().cpu().numpy()
+        x0 = x0.detach().squeeze().cpu().numpy()
+        ex = perturbed_image.squeeze().detach().cpu().numpy()
+        if len(atk.shape) > 2:
+            atk = np.transpose(atk, (1, 2, 0))
+            x0 = np.transpose(x0, (1, 2, 0))
+            ex = np.transpose(ex, (1, 2, 0))
+
+
         # Save some adv examples for visualization later
         if success and (len(self.adv_ex) < self.num_adv_ex):
-            ex = perturbed_image.squeeze().detach().cpu().numpy()
-            self.adv_ex.append( (init_pred.item(), final_pred.item(), ex) )
+            self.adv_ex.append( (true.item(), final_pred.item(), ex) )
+            self.adv_true.append(true.item())
+            self.adv_pred.append(final_pred.item())
+            self.adv_x0.append(x0)
+            self.adv_atk.append(atk)
+            self.adv_true_init_prob.append(true_class_prob0)
+            self.adv_final_prob.append(pred_class_prob)
+            self.adv_xt.append(ex)
         if (not success) and (len(self.failed_ex) < self.num_failed_ex):
-            ex = perturbed_image.squeeze().detach().cpu().numpy()
-            self.failed_ex.append( (init_pred.item(), final_pred.item(), ex) )
+            self.failed_ex.append( (true.item(), final_pred.item(), ex) )
 
 
 def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw', early_stopping = None, fw_stepsize_rule = 1, gap_FW_tol = 0.05, targeted = False, ex_saver=None, norm_p=-1, seed=42):
@@ -217,6 +243,7 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
         had_first_success = False
         gap_FW = None
         info = None
+        true_class_prob0 = 0
 
         for t in range(num_fw_iter):
             # Step size calculation
@@ -225,6 +252,10 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
             x_t.requires_grad = True
             # Forward pass the data through the model
             output = model(x_t)
+            class_probs = torch.softmax(output,dim=1)
+            if t==0:
+                # save init confidence in true class
+                true_class_prob0 = class_probs[0, target.item()].item()
             init_pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
 
             # If the initial prediction is wrong, don't bother attacking, just move on
@@ -278,13 +309,20 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
             }
             if targeted:
                 hist_iter['adv_target'] = adv_target
-                info['targeted_success'] = (final_pred.item() == adv_target)
+                targeted_success = (final_pred.item() == adv_target)
+                info['targeted_success'] = targeted_success
+            else:
+                targeted_success = False
+        
             if info is not None:
                 hist_iter.update(info) # some methods output dict containing info at each step
             hist.append(hist_iter)
             if stop:
+                class_probs = torch.softmax(output,dim=1)
+                pred_class_prob = class_probs[0, final_pred.item()].item()
                 if ex_saver is not None:
-                    ex_saver.save_ex(perturbed_image, target, final_pred, success)
+                    save_as_adv = targeted_success if targeted else success
+                    ex_saver.save_ex(perturbed_image, x0_denorm, target, final_pred, save_as_adv, true_class_prob0, pred_class_prob)
                 break
         ex_num += 1
         if ex_num >= num_test: # limit test set for speed
