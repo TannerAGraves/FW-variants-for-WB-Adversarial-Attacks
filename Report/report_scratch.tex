@@ -61,7 +61,7 @@ It is also worth noting that, in the context of adversarial attacks, the Frank-W
 \section{Algorithims}
 \subsection{Frank-Wolfe}
 \begin{algorithm}
-\caption{An algorithm with caption}\label{alg:cap}
+\caption{FW for adversarial attacks}\label{alg:cap}
 \begin{algorithmic}[1]
 \Require maximum iterations $T$, stepsizes $\{\gamma_t\}$, convergence tolerence $\delta$
 \Ensure $y = x^n$
@@ -88,11 +88,11 @@ Each iteration of the FW algorithim is seen to increase or introduce the contrib
 The innovation of the Away-Step and Pairwise varient is to recognize contribution of "bad atoms" can prevent convergence to an optimum on the boundry. These varients more directly diminish such atoms contributions by either taking steps away from selected atoms, or transfering mass between two selected atoms at each iteration as the case with the pairwise varient.
 
 \subsection{Away-Step Frank-Wolfe}
-The away-step FW algorithim defines a gap in two possible directions: the typical FW step $s_t$ and an away step $v_t  \in {\arg \max}_{v\in S_t} \langle v, \nabla f(x_t)\rangle$. By comparing the gaps associated with the two directions, the algorithim compares the cost of taking a typical FW step to the cost associated with moving away from active atoms in $S_t$. Should this gap be less than that of moving twords the frank wolfe direction, the influence of the selected away atom $v_t\in S_t$ will be deminished, and even dropped if the corresponding $\alpha_{v_t} \leq 0$. 
+The away-step FW algorithim (AFW) defines a gap in two possible directions: the typical FW step $d_t^\text{FW}$ and an away direction $d_t^\text{A} = x_t - v_t$ where $v_t  \in {\arg \max}_{v\in S_t} \langle v, \nabla f(x_t)\rangle$. By comparing the gaps associated with the two directions, the algorithim compares the cost of taking a typical FW step to the cost associated with moving away from active atoms in $S_t$. Should this gap be less than that of moving twords the frank wolfe direction, the influence of the selected away atom $v_t\in S_t$ will be deminished, and even dropped if the corresponding $\alpha_{v_t} \leq 0$. 
 The $\alpha$ updates can be seen to be inverse for that of a normal FW step. Here infulene of $v_t$ is distributed uniformly to other active atoms. New coefficients for the comvex combination are for $v_t$, $\alpha_{v_{t}} := (1+\gamma_t)\alpha_{v_t} - \gamma_t$, and otherwise $\alpha_{v_{t+1}} := (1+\gamma_t)\alpha_{v}$. 
 The algorithim enables a "drop step" where the contribution of an atom is compleatly removed from the convex combination, aleviating the problem of osicllation when converging to an optimum on the boundry. 
 This algorithim is proved to have linear convergence for convex problems
-\begin{algorithm}
+\begin{algorithm}[H]
 \caption{Away-Step FW for Adversarial Attacks}\label{alg:cap}
 \begin{algorithmic}[1]
 \Require maximum iterations $T$, stepsizes $\{\gamma_t\}$, convergence tolerence $\delta$, $x_0 \in \mathcal{M}$
@@ -127,12 +127,24 @@ Introduce Datasets
 The methods for stepsize were implemented as follows: Lipschitz constant-based (fixed) stepsize, where the stepsize is determined using the Lipschitz constant \(L\) with \(\gamma_t = \frac{1}{L}\); exact inesearching, which solves the optimization problem \(\arg \min_{\gamma} f(x + \gamma d_t)\) where \(\gamma \in (0,1]\); Decaying stepsize, where the stepsize decreases over time according to \(\gamma_t = \frac{2}{t + 2}\); and Armijo-rule search, which chooses \(\gamma_t\) to satisfy the Armijo rule \(f(x + \gamma_t d_t) \leq f(x) + \delta \gamma_t \nabla f(x)^T d_t\), where \(delta \in (0,1)\) controls the sufficient decrease condition.
 
 \subsection{$\epsilon$ Choice}
-Create plot showing how accurate attacks are with different $\epsilon$ constraints.
+Our three different models where pretrained on datasets with differing image scales. To allow for comparison of the sensitivity of each model to attakcks with different $\epsilon$, at each iteration we normalize to ensure images $x_0$ have mean $0.5$ and varience $1$ to ensure equal relative perturbation of the same $\epsilon$ on all three models. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{plots/eps_choice.png}
+    \caption{Effect of $\epsilon$ on attack success for untargeted FW for each dataset.}
+    \label{fig:converge-compare}
+\end{figure}
+
+\subsection{Targeted vs. Untargeted Attacks}
+We implemented both untargeted and targeted attacks, requiring defining a custom loss function for the pretrained models. where $f(x) = -\ell(x, y)$ for untargeted attacks, and $f(x) = \ell(x, y_\text{adv})$ where $y$ is the true label and $y_\text{adv}$ the adversarial target class chosen at random to be any class other than $y$. We find, unsuprisingly, that targeted attacks are invariably a more challanging problem, resulting in lower success rates and higher average iterations for all varients and datasets.
+
+For example, attacks on a set of $100$ examples with ResNet18 and $\epsilon = 0.005$ with normal FW algorithim using decaying rule, acheived a success rate of $0.93$ requiring $5.44$ iterations on average in the untargeted case, but a success rate of $0.63$ and $13.26$ iterations in the targeted case.
 
 \subsection{Varients}
 
 % DUMMY VALUES NEED TO BE CHANGED
-\begin{table}[h]
+\begin{table}[H]
     \centering
     \resizebox{\textwidth}{!}{
     \begin{tabular}{@{}lcccccccc@{}}
@@ -141,9 +153,9 @@ Create plot showing how accurate attacks are with different $\epsilon$ constrain
         \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
         & \textbf{Success (\%)} & \textbf{Avg Iter} & \textbf{Success (\%)} & \textbf{Avg Iter} & \textbf{Success (\%)} & \textbf{Avg Iter} \\
         \midrule
-        Frank-Wolfe (FW) & 85.4 & 50 & 86.1 & 48 & 84.7 & 52 \\
-        Away-Step FW (AFW) & 87.3 & 45 & 88.0 & 43 & 86.9 & 47 \\
-        Pairwise FW (PFW) & 86.5 & 47 & 87.2 & 44 & 85.8 & 49 \\
+        FW & 85.4 & 50 & 86.1 & 48 & 84.7 & 52 \\
+        AFW & 87.3 & 45 & 88.0 & 43 & 86.9 & 47 \\
+        PFW & 86.5 & 47 & 87.2 & 44 & 85.8 & 49 \\
         \bottomrule
     \end{tabular}
     }

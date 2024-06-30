@@ -9,6 +9,7 @@ import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import random
 
 class simple_FashionMNIST():
     def __init__(self, trained_mdl_pth):
@@ -78,7 +79,7 @@ class simple_FashionMNIST():
                 self.optimizer.zero_grad()
                 
                 # Forward pass: Pass the images through the model to get the predicted outputs
-                outputs = model(images)
+                outputs = self.model(images)
                 
                 # Compute the loss between the predicted outputs and the true labels
                 loss = self.criterion(outputs, labels)
@@ -92,6 +93,13 @@ class simple_FashionMNIST():
         return batch
     def renorm(self, batch):
         return batch.detach()
+    
+    def remake_testloader(self, seed):
+        torch.manual_seed(seed)
+        random.seed(seed)
+        np.random.seed(seed)
+        self.testloader = torch.utils.data.DataLoader(self.testset, batch_size=1, shuffle=False)
+        return self.testloader
 
 class BasicCNN(nn.Module):
     def __init__(self):

@@ -1,6 +1,7 @@
 ## CODE FOR LENET ADAPTED FROM: https://blog.paperspace.com/writing-lenet5-from-scratch-in-python/
 
 import os
+import numpy as np
 import random
 import torch
 import torch.nn as nn
@@ -131,6 +132,18 @@ class LeNet():
     
     def renorm(self, batch):
         return transforms.Normalize(tuple(self.mean), tuple(self.std))(batch).detach()
+    
+    def remake_testloader(self, seed):
+        torch.manual_seed(seed)
+        random.seed(seed)
+        np.random.seed(seed)
+        self.testloader = torch.utils.data.DataLoader(
+            datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.1307,), (0.3081,)),
+                    ])),
+                batch_size=1, shuffle=True)
+        return self.testloader
         
 
 # LeNet Model definition
