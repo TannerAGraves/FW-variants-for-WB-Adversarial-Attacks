@@ -54,7 +54,7 @@ class AttackStep:
         # Use LMO to compute the attack direction
         v_t = self.lmo.get(g_t)
         d_t = v_t - x_t
-
+        self.d_t = d_t
         fw_stepsize = self.stepsize_method.get_stepsize(x_t, d_t)
         info['stepsize'] = fw_stepsize
         perturbed_image = x_t + fw_stepsize * d_t
@@ -148,7 +148,7 @@ class AttackStep:
 
     def fw_step_away(self, x_t, g_t, debug=True):
         # alg from FW_varients.pdf
-        use_conv_comb_x_t = True
+        use_conv_comb_x_t = False
         info = {}
         debug_info = {}
         
@@ -180,6 +180,7 @@ class AttackStep:
             d_t = d_t_AWAY
             alpha_v_t = self.A_t[v_t_idx]
             max_step = 1 if alpha_v_t == 1 else alpha_v_t / (1 - alpha_v_t)  # avoid divide by zero when alpha = 1
+        self.d_t = d_t
         info['step_type'] = step_type
         debug_info['max_step'] = max_step
         # determine stepsize according to rule
@@ -273,6 +274,7 @@ class AttackStep:
         info['gap_AS'] = gap_AWAY
 
         d_t = d_t_FW + d_t_AWAY #s_t - v_t
+        self.d_t = d_t
         fw_stepsize = self.stepsize_method.get_stepsize(x_t, d_t, max_step)
 
         self.S_t, self.A_t = self.update_active_pair(fw_stepsize, s_t, v_t_idx, info)

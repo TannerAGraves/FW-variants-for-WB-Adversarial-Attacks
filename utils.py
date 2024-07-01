@@ -101,7 +101,7 @@ class AdversarialLoss(nn.Module):
             return loss.mean()
         
 class stepsize():
-    def __init__(self, model, strat, x0, fixed_size = 1, ls_criterion=None, ls_target = None, ls_num_samples=10):
+    def __init__(self, model, strat, x0, fixed_size = 1, ls_criterion=None, ls_target = None, ls_num_samples=20):
         if isinstance(strat, (float, int)):
             fixed_size = strat
             strat = 'fixed'
@@ -109,11 +109,13 @@ class stepsize():
         self.strat = strat
         self.fixed_size = fixed_size
         self.x0 = x0
+        self.x_t_grad = None
+        self.loss0 = None
         self.ls_criterion = ls_criterion
         self.ls_target = ls_target
         self.ls_num_samples = ls_num_samples
         self.stepsize = fixed_size # will be updated if using other method
-        if self.strat not in ['fixed', 'ls', 'decay']:
+        if self.strat not in ['fixed', 'ls', 'decay', 'amjo']:
             raise Exception("Accepted stepsize rules are ['fixed', 'ls', 'decay']")
     
     def set_stepsize_decay(self, t):
@@ -132,10 +134,94 @@ class stepsize():
         best_idx = np.argmin(losses) # check if this is min or max
         self.stepsize = steps[best_idx]
         return self.stepsize
-    
+
+
+    # def stepsize_linesearch(self, x_t, d_t, max_step=1):
+    #     x_t = x_t.clone().detach()
+    #     d_t = d_t.clone().detach()
+
+    #     with torch.no_grad():
+    #         # Create a tensor of step sizes
+    #         steps = torch.linspace(0, max_step, self.ls_num_samples).to(x_t.device)
+
+    #         # Reshape step sizes to broadcast with x_t and d_t
+    #         steps = steps.view(-1, 1, 1, 1)
+
+    #         # Create a batch of x_t_new for each step size
+    #         x_t_new = x_t + steps * d_t
+
+    #         # Flatten batch dimension into the first dimension for the model input
+    #         batch_size, channels, height, width = x_t.shape
+    #         x_t_new = x_t_new.view(-1, channels, height, width)
+
+    #         # Pass the batch through the model in one forward pass
+    #         output = self.model(x_t_new)
+
+    #         # Compute the loss for each step size
+    #         # Repeat the target for each step size
+    #         target_repeated = self.ls_target.repeat(len(steps))
+    #         losses = -F.cross_entropy(output, target_repeated)#self.ls_criterion(output, target_repeated)
+
+    #         # Find the step size that minimizes the loss
+    #         best_idx = torch.argmin(losses)
+    #         self.stepsize = steps[best_idx].item()
+
+    #     return self.stepsize
+
+    # def stepsize_armijo(self, x_t, d_t, max_step = 1, alpha = 1e-2, beta = 0.25):
+    #     x_tc = x_t.clone().detach()
+    #     d_tc = d_t.clone().detach()
+    #     dir_derivative = torch.sum(-self.x_t_grad*d_tc)
+    #     # Initial step size
+    #     step = max_step
+
+    #     # Armijo condition loop
+    #     while step > 1e-10:  # Ensure we don't run into an infinite loop
+    #         new_output = self.model(x_tc + step * d_tc)
+    #         new_loss = self.ls_criterion(new_output, self.ls_target)
+
+    #         # Check the Armijo condition
+    #         if new_loss <= self.loss0 + alpha * step * dir_derivative:
+    #             self.stepsize = step
+    #             return self.stepsize
+
+    #         # Reduce the step size
+    #         step *= beta
+
+    #     # If no step size is found satisfying the Armijo condition, return the smallest step
+    #     self.stepsize = step
+    #     return self.stepsize
+
+    def stepsize_armijo(self, x_t, d_t, max_step = 1):
+        info_step = {}
+        x_tc = x_t.clone().detach()
+        d_tc = d_t.clone().detach()
+        step_size = max_step
+        gamma = 0.25
+        delta = 0.5
+        initial_loss = self.ls_criterion(self.model(x_tc), self.ls_target)#F.cross_entropy(self.model(x_k), target).item()
+        min_loss = float('inf')
+        
+        while step_size > 1e-4:
+            new_point = x_tc + step_size * d_tc
+            new_loss = self.ls_criterion(self.model(new_point), self.ls_target)#F.cross_entropy(self.model(new_point), target).item()
+            RHS = initial_loss + gamma * step_size * torch.sum(self.x_t_grad * d_tc).item()
+            if new_loss < min_loss:
+                min_loss = new_loss
+                best_stepsize = step_size
+            if new_loss <= RHS:
+                return step_size
+            
+            step_size *= delta
+        
+        return best_stepsize
+
     def get_stepsize(self, x_t, d_t, max_step = 1):
         if self.strat == 'ls':
+            #fw_stepsize = self.exact_ls(x_t, d_t, max_step)
             fw_stepsize = self.stepsize_linesearch(x_t, d_t, max_step)
+        elif self.strat == 'amjo':
+            fw_stepsize = self.stepsize_armijo(x_t, d_t, max_step)
         else:
             fw_stepsize = self.stepsize
         fw_stepsize = min(fw_stepsize, max_step)
@@ -253,18 +339,20 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
             # Forward pass the data through the model
             output = model(x_t)
             class_probs = torch.softmax(output,dim=1)
+            # Calculate the loss
+            loss = criterion(output, target)
+
             if t==0:
                 # save init confidence in true class
                 true_class_prob0 = class_probs[0, target.item()].item()
+                stepsize_method.loss0 = loss.item()
             init_pred = output.max(1, keepdim=True)[1] # get the index of the max log-probability
 
             # If the initial prediction is wrong, don't bother attacking, just move on
             if (init_pred.item() != target.item()) and (t == 0):
                 ex_num -= 1 # don't count this example
                 break
-
-            # Calculate the loss
-            loss = criterion(output, target)
+            
             # Zero all existing gradients
             model.zero_grad()
             # Calculate gradients of model in backward pass
@@ -272,6 +360,8 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
             x_t_grad = x_t.grad#.data
             # Restore the data to its original scale
             x_t_denorm = target_model.denorm(x_t)
+            stepsize_method.x_t_grad = x_t_grad.clone().detach()
+
             # Call Attack
             with torch.no_grad():
                 perturbed_image, gap_FW, info = attackStep.step(x_t_denorm, x_t_grad)

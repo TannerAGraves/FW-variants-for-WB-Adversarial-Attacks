@@ -163,15 +163,16 @@ For example, attacks on a set of $100$ examples with ResNet18 and $\epsilon = 0.
         \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
         & \textbf{ASR (\%)} & \textbf{Avg Iter} & \textbf{ASR (\%)} & \textbf{Avg Iter} & \textbf{ASR (\%)} & \textbf{Avg Iter} \\
         \midrule
-        FW & 85.4 & 50 & 86.1 & 48 & 84.7 & 52 \\
-        AFW & 87.3 & 45 & 88.0 & 43 & 86.9 & 47 \\
-        PFW & 86.5 & 47 & 87.2 & 44 & 85.8 & 49 \\
+        FW & 85.4 & 50 & 86.1 & 48 & 87.4 & 10.2 \\
+        AFW & 87.3 & 45 & 88.0 & 43 & 86.2 & 10.2 \\
+        PFW & 86.5 & 47 & 87.2 & 44 & 82.2 & 11.2 \\
         \bottomrule
     \end{tabular}
     }
-    \caption{Attack Success Rate (ASR) and Average Iterations of Frank-Wolfe Algorithm and Variants for Targeted Adversarial Attacks on Three Datasets with $20$ maximum iterations.}
+    \caption{Attack Success Rate (ASR) and Average Iterations of Frank-Wolfe Algorithm and Variants for Targeted Adversarial Attacks on 1000 Examples from Three Datasets with $20$ maximum iterations and decaying stepsize rule.}
     \label{tab:algorithm_performance}
 \end{table}
+We observe that the difficulity of the optimization problem, as influecned by the choice of dataset to attack, $\epsilon$ choice, and perfroming either targeted or untargeted attacks will effect the number of Away Steps taken by AFW. 
 
 %REPLACE WITH FINAL RESULTS
 \begin{figure}[H]
