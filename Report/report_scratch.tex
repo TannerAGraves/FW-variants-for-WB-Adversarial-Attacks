@@ -118,6 +118,29 @@ This algorithim is proved to have linear convergence for convex problems
 \end{algorithm}
 
 \subsection{Pairwise Frank-Wolfe}
+Pairwise Frank-Wolfe (PFW) is similar to AFW in that it computes the same away step. However, step taken by the algorithim is not a choice between the two, but rather their sum $d_t^\text{PFW} = d_t^\text{FW} + d_t^\text{A} = s_t - v_t$. 
+
+\begin{algorithm}[H]
+\caption{Away-Step FW for Adversarial Attacks}\label{alg:cap}
+\begin{algorithmic}[1]
+\Require maximum iterations $T$, stepsizes $\{\gamma_t\}$, convergence tolerence $\delta$, $x_0 \in \mathcal{M}$
+\State Define $S_0 := \{x_0\}$ with $\alpha_{x_0} = 1$
+\For{$t = 1,...,T$}
+	\State $s_t  := {\arg \min}_{x\in\mathcal{M}} \langle x, \nabla f(x_t)\rangle$ \Comment{LMO step}
+	\State $d_t^{\text{FW}} := s_t - x_t$
+	\State $v_t  := {\arg \max}_{v\in S_t} \langle v, \nabla f(x_t)\rangle$
+	\If{$\langle d_t^\text{FW}, -\nabla f(x)\rangle < \delta$} \text{return} $x_t$ \hfill \Comment{FW gap convergence criterion}
+	\EndIf
+	% for the sets use the notation from FW_varients for consistency
+	% M is the condstrained space of the attack and A is the set of vertieces
+	\State $d_t := s_t - v_t$
+	\State $x_{t+1} = x_t + \gamma_t d_t$
+	\State Update $\alpha$, $S_{t+1}$ s.t. $\langle \alpha, S_{t+1}\rangle = x_{t+1}$ (See below)
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+The behaivor of the of PFW can be understood to be transfering mass in the convex combination from the worst atom to the active set to the atom corresponding the the FW direction. At each iteration the $\alpha$ coefficients are updated as follows: $\alpha_{v_{t+1}} = \alpha_{v_t} - \gamma_t$, $\alpha_{s_{t+1}} = \alpha_{s_t} + \gamma_t$ and all other $\alpha$ values are unchanged. To maintian $x_t$ \emph{convex} combination of atoms in active set, and consequentily not affine or infeasible, its required $\gamma_t \leq \gamma_\text{max} := \alpha_{v_t}$. By directly minimizing, and potentially dropping bad atoms from the active set, the osicilation observed with FW is mitigated. In the convex case this has been shown to give the PFW varient a linear convergence rate.
 
 \section{Results}
 Introduce Datasets
@@ -167,12 +190,13 @@ For example, attacks on a set of $100$ examples with ResNet18 and $\epsilon = 0.
         AFW & 87.3 & 45 & 88.0 & 43 & 86.2 & 10.2 \\
         PFW & 86.5 & 47 & 87.2 & 44 & 82.2 & 11.2 \\
         \bottomrule
+	\label{table:varients}
     \end{tabular}
     }
     \caption{Attack Success Rate (ASR) and Average Iterations of Frank-Wolfe Algorithm and Variants for Targeted Adversarial Attacks on 1000 Examples from Three Datasets with $20$ maximum iterations and decaying stepsize rule.}
     \label{tab:algorithm_performance}
 \end{table}
-We observe that the difficulity of the optimization problem, as influecned by the choice of dataset to attack, $\epsilon$ choice, and perfroming either targeted or untargeted attacks will effect the number of Away Steps taken by AFW. 
+We observe that the difficulity of the optimization problem, as influecned by the choice of dataset to attack, $\epsilon$ choice, and perfroming either targeted or untargeted attacks will effect the number of Away Steps taken by AFW. Targeted attacks on CIFAR-10 as described in table 
 
 %REPLACE WITH FINAL RESULTS
 \begin{figure}[H]

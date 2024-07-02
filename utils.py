@@ -29,19 +29,22 @@ class LMO:
         s_t = -self.epsilon * g_t_sign + self.x0
         return s_t
     
-    def _LMO_L1(self, g_t):
-        s_t = torch.zeros_like(g_t)
-        for i in range(g_t.size(0)):
-            max_abs_index = torch.argmax(torch.norm(torch.abs(g_t[i]), p=2, dim=1))
-            s_t[i][max_abs_index] = -self.epsilon * g_t[i][max_abs_index].sign()
-        s_t += self.x0
-        return s_t
-    
     def l_1(self, g_t):
-        index = torch.argmax(torch.abs(g_t))
-        s_t = torch.zeros_like(g_t)
-        s_t[index] = -self.epsilon * torch.sign(g_t[index]) # check if sign of eps is correct
-        return s_t + self.x_0
+        grad_flat = g_t.view(-1)
+        
+        # Find the index of the maximum absolute value in the gradient
+        max_idx = torch.argmax(torch.abs(grad_flat))
+        
+        # Create an empty tensor with the same shape as the flattened gradient
+        lmo_solution_flat = torch.zeros_like(grad_flat)
+        
+        # Set the value at the index of the maximum absolute value to be the sign times epsilon
+        lmo_solution_flat[max_idx] = -self.epsilon * torch.sign(grad_flat[max_idx])
+        
+        # Reshape the solution back to the original shape of the gradient
+        lmo_solution = lmo_solution_flat.view_as(g_t) + self.x0
+        
+        return lmo_solution
 
 class AdversarialLoss(nn.Module):
     def __init__(self, num_classes, specific_label=None):
@@ -56,7 +59,7 @@ class AdversarialLoss(nn.Module):
         self.num_classes = num_classes
         self.specific_label = specific_label
 
-    def forward(self, outputs, targets):
+    def forward1(self, outputs, targets):
         """
         Compute the adversarial loss.
         
@@ -100,8 +103,28 @@ class AdversarialLoss(nn.Module):
             loss = -average_incorrect_log_probs
             return loss.mean()
         
+    def forward(self, outputs, targets):
+        """
+        Compute the adversarial loss.
+        
+        Args:
+        - outputs (torch.Tensor): The model outputs (logits) of shape (batch_size, num_classes).
+        - targets (torch.Tensor): The true labels of shape (batch_size,).
+        
+        Returns:
+        - loss (torch.Tensor): The computed adversarial loss.
+        """
+        batch_size = outputs.size(0)
+        if self.specific_label is not None:
+            adv_target = torch.full((outputs.size(0),), self.specific_label, dtype=torch.long)
+            return F.cross_entropy(outputs, adv_target)
+        else:
+            if isinstance(targets, int):
+                targets = torch.full((outputs.size(0),), targets, dtype=torch.long)
+            return -F.nll_loss(outputs, targets)
+        
 class stepsize():
-    def __init__(self, model, strat, x0, fixed_size = 1, ls_criterion=None, ls_target = None, ls_num_samples=20):
+    def __init__(self, model, strat, x0, fixed_size = 1, ls_criterion=None, ls_target = None, ls_num_samples=50):
         if isinstance(strat, (float, int)):
             fixed_size = strat
             strat = 'fixed'
@@ -134,87 +157,68 @@ class stepsize():
         best_idx = np.argmin(losses) # check if this is min or max
         self.stepsize = steps[best_idx]
         return self.stepsize
-
+    
 
     # def stepsize_linesearch(self, x_t, d_t, max_step=1):
-    #     x_t = x_t.clone().detach()
-    #     d_t = d_t.clone().detach()
-
-    #     with torch.no_grad():
-    #         # Create a tensor of step sizes
-    #         steps = torch.linspace(0, max_step, self.ls_num_samples).to(x_t.device)
-
-    #         # Reshape step sizes to broadcast with x_t and d_t
-    #         steps = steps.view(-1, 1, 1, 1)
-
-    #         # Create a batch of x_t_new for each step size
-    #         x_t_new = x_t + steps * d_t
-
-    #         # Flatten batch dimension into the first dimension for the model input
-    #         batch_size, channels, height, width = x_t.shape
-    #         x_t_new = x_t_new.view(-1, channels, height, width)
-
-    #         # Pass the batch through the model in one forward pass
-    #         output = self.model(x_t_new)
-
-    #         # Compute the loss for each step size
-    #         # Repeat the target for each step size
-    #         target_repeated = self.ls_target.repeat(len(steps))
-    #         losses = -F.cross_entropy(output, target_repeated)#self.ls_criterion(output, target_repeated)
-
-    #         # Find the step size that minimizes the loss
-    #         best_idx = torch.argmin(losses)
-    #         self.stepsize = steps[best_idx].item()
-
-    #     return self.stepsize
-
-    # def stepsize_armijo(self, x_t, d_t, max_step = 1, alpha = 1e-2, beta = 0.25):
     #     x_tc = x_t.clone().detach()
     #     d_tc = d_t.clone().detach()
-    #     dir_derivative = torch.sum(-self.x_t_grad*d_tc)
-    #     # Initial step size
-    #     step = max_step
+    #     losses = []
+    #     with torch.no_grad():
+    #         # Create a tensor of steps
+    #         steps = torch.linspace(max_step / self.ls_num_samples, max_step, self.ls_num_samples).to(x_t.device).view(-1, 1, 1, 1)
 
-    #     # Armijo condition loop
-    #     while step > 1e-10:  # Ensure we don't run into an infinite loop
-    #         new_output = self.model(x_tc + step * d_tc)
-    #         new_loss = self.ls_criterion(new_output, self.ls_target)
+    #         # Generate all possible x_t + step * d_t combinations in parallel
+    #         x_t_steps = x_tc + steps * d_tc
 
-    #         # Check the Armijo condition
-    #         if new_loss <= self.loss0 + alpha * step * dir_derivative:
-    #             self.stepsize = step
-    #             return self.stepsize
+    #         # Flatten the batch and step dimensions for efficient processing
+    #         batch_size = x_t.size(0)
+    #         num_steps = steps.size(0)
+    #         #x_t_steps = x_t_steps.view(batch_size * num_steps, *x_t.size()[1:])
 
-    #         # Reduce the step size
-    #         step *= beta
+    #         # Pass through the model in parallel
+    #         output = self.model(x_t_steps)
 
-    #     # If no step size is found satisfying the Armijo condition, return the smallest step
-    #     self.stepsize = step
+    #         # # Compute losses
+    #         output = output.view(batch_size, num_steps, -1)
+    #         losses = []
+    #         for out in output:
+    #             losses.append(self.ls_criterion(out, self.ls_target).item())
+            
+    #         # Find the index of the minimum loss for each example in the batch
+    #         best_idx = np.argmin(losses)
+            
+    #         # Get the corresponding steps
+    #         self.stepsize = steps[best_idx].item()
+            
     #     return self.stepsize
 
-    def stepsize_armijo(self, x_t, d_t, max_step = 1):
-        info_step = {}
-        x_tc = x_t.clone().detach()
-        d_tc = d_t.clone().detach()
-        step_size = max_step
-        gamma = 0.25
-        delta = 0.5
-        initial_loss = self.ls_criterion(self.model(x_tc), self.ls_target)#F.cross_entropy(self.model(x_k), target).item()
-        min_loss = float('inf')
+
+
+
+    # def stepsize_armijo(self, x_t, d_t, max_step = 1):
+    #     info_step = {}
+    #     x_tc = x_t.clone().detach()
+    #     d_tc = d_t.clone().detach()
+    #     step_size = max_step
+    #     gamma = 0.25
+    #     delta = 0.5
+    #     initial_loss = self.ls_criterion(self.model(x_tc), self.ls_target)#F.cross_entropy(self.model(x_k), target).item()
+    #     min_loss = float('inf')
         
-        while step_size > 1e-4:
-            new_point = x_tc + step_size * d_tc
-            new_loss = self.ls_criterion(self.model(new_point), self.ls_target)#F.cross_entropy(self.model(new_point), target).item()
-            RHS = initial_loss + gamma * step_size * torch.sum(self.x_t_grad * d_tc).item()
-            if new_loss < min_loss:
-                min_loss = new_loss
-                best_stepsize = step_size
-            if new_loss <= RHS:
-                return step_size
+    #     while step_size > 1e-4:
+    #         new_point = x_tc + step_size * d_tc
+    #         new_loss = self.ls_criterion(self.model(new_point), self.ls_target)#F.cross_entropy(self.model(new_point), target).item()
+    #         RHS = initial_loss + gamma * step_size * torch.sum(self.x_t_grad * d_tc).item()
+    #         if new_loss < min_loss:
+    #             min_loss = new_loss
+    #             best_stepsize = step_size
+    #         if new_loss <= RHS:
+    #             return step_size
             
-            step_size *= delta
+    #         step_size *= delta
         
-        return best_stepsize
+    #     return best_stepsize
+
 
     def get_stepsize(self, x_t, d_t, max_step = 1):
         if self.strat == 'ls':
