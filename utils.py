@@ -8,16 +8,17 @@ from AttackStep import AttackStep
 from tqdm import tqdm
 
 class LMO:
-    def __init__(self, epsilon, x0, p=-1):
+    def __init__(self, epsilon, x0, p):
         self.x0 = x0.clone().detach()  # Ensure x0 is not modified elsewhere
         self.epsilon = epsilon
         self.p = p
+        # Select the appropriate LMO method based on the norm p
         if p == -1:
             self.method = self._LMO_inf
         elif p == 1:
-            self.method = self.l_1
-        elif p > 1:
-            self.method = self._LMO_Lp
+            self.method = self._LMO_l1
+        elif p == 2:
+            self.method = self._LMO_l2
         else:
             raise Exception(f"invalid choice of norm {p}")
 
@@ -25,26 +26,24 @@ class LMO:
         return self.method(g_t)
 
     def _LMO_inf(self, g_t):
-        g_t_sign = g_t.sign()
-        s_t = -self.epsilon * g_t_sign + self.x0
+        g_t_sign = g_t.sign()  # Get the sign of the gradient
+        s_t = -self.epsilon * g_t_sign + self.x0  # Update step for l_inf norm
         return s_t
-    
-    def l_1(self, g_t):
-        grad_flat = g_t.view(-1)
-        
-        # Find the index of the maximum absolute value in the gradient
-        max_idx = torch.argmax(torch.abs(grad_flat))
-        
-        # Create an empty tensor with the same shape as the flattened gradient
-        lmo_solution_flat = torch.zeros_like(grad_flat)
-        
-        # Set the value at the index of the maximum absolute value to be the sign times epsilon
-        lmo_solution_flat[max_idx] = -self.epsilon * torch.sign(grad_flat[max_idx])
-        
-        # Reshape the solution back to the original shape of the gradient
-        lmo_solution = lmo_solution_flat.view_as(g_t) + self.x0
-        
-        return lmo_solution
+
+    def _LMO_l1(self, gradient):
+        abs_gradient = gradient.abs()  # Get the absolute value of the gradient
+        sign_gradient = gradient.sign()  # Get the sign of the gradient
+        perturbation = torch.zeros_like(gradient)
+        # For each example in the batch, select the component with the maximum absolute gradient
+        for i in range(gradient.size(0)):
+            _, idx = torch.topk(abs_gradient[i].view(-1), 1)
+            perturbation[i].view(-1)[idx] = sign_gradient[i].view(-1)[idx]
+        return self.epsilon * perturbation
+
+    def _LMO_l2(self, g_t): # from arxiv version of attacks.pdf
+        g_t_norm = torch.norm(g_t, p=2, dim=-1, keepdim=True)
+        s_t = -self.epsilon * g_t / g_t_norm + self.x0
+        return s_t
 
 class AdversarialLoss(nn.Module):
     def __init__(self, num_classes, specific_label=None):
