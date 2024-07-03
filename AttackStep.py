@@ -62,7 +62,7 @@ class AttackStep:
         gap_FW = torch.sum(-d_t * g_t).item()
         return perturbed_image, gap_FW, info
 
-    def fw_step_momentum(self, x_t, g_t,  momentum=0.2):
+    def fw_step_momentum(self, x_t, g_t,  momentum=0.8):
         # alg from attacks.pdf
         info = {}
         m_t = (1 - momentum) * g_t
@@ -135,7 +135,7 @@ class AttackStep:
         while i < len(self.A_t):
             alpha_i = self.A_t[i]
             if alpha_i <= 0:
-                debug_info['drop_stepAS'] = 'AS'
+                debug_info['drop_step'] = 'AS'
                 self.A_t.pop(i)
                 self.S_t.pop(i)
             else:

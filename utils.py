@@ -59,7 +59,7 @@ class AdversarialLoss(nn.Module):
         self.num_classes = num_classes
         self.specific_label = specific_label
 
-    def forward1(self, outputs, targets):
+    def forward(self, outputs, targets):
         """
         Compute the adversarial loss.
         
@@ -103,7 +103,7 @@ class AdversarialLoss(nn.Module):
             loss = -average_incorrect_log_probs
             return loss.mean()
         
-    def forward(self, outputs, targets):
+    def forward1(self, outputs, targets):
         """
         Compute the adversarial loss.
         
@@ -117,6 +117,9 @@ class AdversarialLoss(nn.Module):
         batch_size = outputs.size(0)
         if self.specific_label is not None:
             adv_target = torch.full((outputs.size(0),), self.specific_label, dtype=torch.long)
+            if isinstance(targets, int):
+                targets = torch.full((outputs.size(0),), targets, dtype=torch.long)
+            
             return F.cross_entropy(outputs, adv_target)
         else:
             if isinstance(targets, int):
@@ -124,7 +127,7 @@ class AdversarialLoss(nn.Module):
             return -F.nll_loss(outputs, targets)
         
 class stepsize():
-    def __init__(self, model, strat, x0, fixed_size = 1, ls_criterion=None, ls_target = None, ls_num_samples=50):
+    def __init__(self, model, strat, x0, fixed_size = 1, ls_criterion=None, ls_target = None, ls_num_samples=20):
         if isinstance(strat, (float, int)):
             fixed_size = strat
             strat = 'fixed'
@@ -151,11 +154,14 @@ class stepsize():
         losses = []
         with torch.no_grad():
             steps = [max_step * (i + 1) / self.ls_num_samples for i in range(self.ls_num_samples)]
+            self._sizes_ls = steps
             for step in steps:
                 output = self.model(x_tc + step * d_tc)
-                losses.append(self.ls_criterion(output, self.ls_target))
-        best_idx = np.argmin(losses) # check if this is min or max
+                losses.append(self.ls_criterion(output, self.ls_target).item())
+        best_idx = np.argmin(losses)
         self.stepsize = steps[best_idx]
+        
+        self._loss_ls = losses
         return self.stepsize
     
 

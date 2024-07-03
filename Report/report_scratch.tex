@@ -51,7 +51,7 @@ This is clearly of $O(n)$ complexity where $n$ is the number of elements in the 
 
 
 % FW GAP as Convergence Criterion
-The constrained nature of the Adversarial Attack problem means that the norm of the gradient $||\nabla_x f(x)||$ is not a suitable convergence criterion, as boundary points need not have zero gradient. Instead, we adopt the Frank-Wolfe gap as a measure of both optimality and point feasibility. This gap measures the maximum improvement over the current iteration $x_t$ within the constraints $\mathcal{M}$ and is defined as:
+The constrained nature of the Adversarial Attack problem means that the norm of the gradient $||\nabla_x f(x)||$ is not a suitable convergence criterion, as boundary points need not have zero gradient. Instead, we adopt the Frank-Wolfe gap as a measure of both optimality and point feasibility. In the convex case, this gap measures the maximum improvement over the current iteration $x_t$ within the constraints $\mathcal{M}$ and is defined as:
 $$g_t^{\text{FW}} := \max_{s \in \mathcal{M}} \langle x_t - s, \nabla f(x_t) \rangle = \langle -\nabla f(x_t), d_t^{\text{FW}} \rangle$$
 The Frank-Wolfe gap $g_t^{\text{FW}}$ is always non-negative $g_t^{\text{FW}} \geq 0$ and is zero if and only if $x_t$ is a stationary point. This makes it a useful convergence criterion, particularly since stationary points need not have zero gradients in constrained problems.
 
@@ -121,7 +121,7 @@ This algorithim is proved to have linear convergence for convex problems
 Pairwise Frank-Wolfe (PFW) is similar to AFW in that it computes the same away step. However, step taken by the algorithim is not a choice between the two, but rather their sum $d_t^\text{PFW} = d_t^\text{FW} + d_t^\text{A} = s_t - v_t$. 
 
 \begin{algorithm}[H]
-\caption{Away-Step FW for Adversarial Attacks}\label{alg:cap}
+\caption{Pairwise FW for Adversarial Attacks}\label{alg:cap}
 \begin{algorithmic}[1]
 \Require maximum iterations $T$, stepsizes $\{\gamma_t\}$, convergence tolerence $\delta$, $x_0 \in \mathcal{M}$
 \State Define $S_0 := \{x_0\}$ with $\alpha_{x_0} = 1$
@@ -131,6 +131,7 @@ Pairwise Frank-Wolfe (PFW) is similar to AFW in that it computes the same away s
 	\State $v_t  := {\arg \max}_{v\in S_t} \langle v, \nabla f(x_t)\rangle$
 	\If{$\langle d_t^\text{FW}, -\nabla f(x)\rangle < \delta$} \text{return} $x_t$ \hfill \Comment{FW gap convergence criterion}
 	\EndIf
+	\State Require: $\gamma_t \leq \alpha_{v_t}$
 	% for the sets use the notation from FW_varients for consistency
 	% M is the condstrained space of the attack and A is the set of vertieces
 	\State $d_t := s_t - v_t$
@@ -143,23 +144,11 @@ Pairwise Frank-Wolfe (PFW) is similar to AFW in that it computes the same away s
 The behaivor of the of PFW can be understood to be transfering mass in the convex combination from the worst atom to the active set to the atom corresponding the the FW direction. At each iteration the $\alpha$ coefficients are updated as follows: $\alpha_{v_{t+1}} = \alpha_{v_t} - \gamma_t$, $\alpha_{s_{t+1}} = \alpha_{s_t} + \gamma_t$ and all other $\alpha$ values are unchanged. To maintian $x_t$ \emph{convex} combination of atoms in active set, and consequentily not affine or infeasible, its required $\gamma_t \leq \gamma_\text{max} := \alpha_{v_t}$. By directly minimizing, and potentially dropping bad atoms from the active set, the osicilation observed with FW is mitigated. In the convex case this has been shown to give the PFW varient a linear convergence rate.
 
 \section{Results}
-Introduce Datasets
-\subsection{Momentum}
-
-\subsection{Stepsize}
-The methods for stepsize were implemented as follows: Lipschitz constant-based (fixed) stepsize, where the stepsize is determined using the Lipschitz constant \(L\) with \(\gamma_t = \frac{1}{L}\); exact inesearching, which solves the optimization problem \(\arg \min_{\gamma} f(x + \gamma d_t)\) where \(\gamma \in (0,1]\); Decaying stepsize, where the stepsize decreases over time according to \(\gamma_t = \frac{2}{t + 2}\); and Armijo-rule search, which chooses \(\gamma_t\) to satisfy the Armijo rule \(f(x + \gamma_t d_t) \leq f(x) + \delta \gamma_t \nabla f(x)^T d_t\), where \(delta \in (0,1)\) controls the sufficient decrease condition.
-
-\subsection{$\epsilon$ Choice}
-Our three different models where pretrained on datasets with differing image scales. To allow for comparison of the sensitivity of each model to attakcks with different $\epsilon$, at each iteration we normalize to ensure images $x_0$ have mean $0.5$ and varience $1$ to ensure equal relative perturbation of the same $\epsilon$ on all three models. 
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.7\textwidth]{plots/eps_choice.png}
-    \caption{Effect of $\epsilon$ on attack success for untargeted FW for each dataset with $L_\infty$ constraint.}
-    \label{fig:converge-compare}
-\end{figure}
-
-As figure \ref{fig:converge-compare} shows, the different models have vastly different sensitivities to adversarial attacks. LeNet is the most robust of the three requiring large maximum perturbations for reliable attakcs. The larger, more complex models can be reliably attacked with imperceptible examples in the case of ResNet or borderline perceptible in the case of the FMNIST model. Representitive attacks are shown in figure 2.
+Algorithims were tested on three pretrained models, each performing a classification task on a different dataset. An implementation of LeNet5 described by LeCun et. al 1998) is a CNN with 62,706 parameters trained on the MNIST dataset to classify handwritten didgets. 
+% https://blog.paperspace.com/writing-lenet5-from-scratch-in-python/
+% http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf?ref=blog.paperspace.com
+Secondly we found a medium sized CNN pretrined for the Fashion MNIST dataset. Designed to be a more difficult problem than MNIST, the model classifies images as one of T-shirt/top, Trouser, Pullover, Dress, Coat, Sandal, Shirt, Sneaker, Bag, Ankle boot. 
+Finally, ResNet 20 is a comparitively large CNN with 20 layers. We use a pretrained implementation adapted for the CIFAR-10 dataset which classifies 32x32 examples into one of 10 categories: Airplane, Automobile, Bird, Cat, Deer, Dog, Frog, Horse, Ship, and Truck. All three proved suseptible to Advarsarial attacks created by FW methods to varying degrees. Representitve sucessful attacks are shown in figure \ref{fig:adv_ex}.
 
 \begin{figure}[H]
     \centering
@@ -168,10 +157,41 @@ As figure \ref{fig:converge-compare} shows, the different models have vastly dif
     \label{fig:adv_ex}
 \end{figure}
 
+We observed that the larger and more complicated a model, the more suseptible it is to adversarial attack. 
+LeNet5 being a notably small and simple model by contempory standards, showed remarkable robustness and required attacks well within perceptible levels ($\epsilon \approx 0.3$) before the tested FW methods could reliably produce adversarial examples. While ResNet and FMNIST model can be rilably attacked with $\epsilon$ above $0.07$ and $0.05$ respectively (see Figure \ref{fig:eps}).
+
+\subsection{$\epsilon$ Choice}
+Our three different models where pretrained on datasets with differing image scales. To allow for comparison of the sensitivity of each model to attakcks with different $\epsilon$, at each iteration we normalize to ensure images $x_0$ have mean $0.5$ and varience $1$ to ensure equal relative perturbation of the same $\epsilon$ on all three models. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{plots/eps_choice.png}
+    \caption{Effect of $\epsilon$ on attack success for untargeted FW for each dataset with $L_\infty$ constraint.}
+    \label{fig:eps}
+\end{figure}
+
+As figure \ref{fig:converge-compare} shows, the different models have vastly different sensitivities to adversarial attacks. LeNet is the most robust of the three requiring large maximum perturbations for reliable attakcs. The larger, more complex models can be reliably attacked with imperceptible examples in the case of ResNet or borderline perceptible in the case of the FMNIST model. Representitive attacks are shown in figure 2.
+
 \subsection{Targeted vs. Untargeted Attacks}
 We implemented both untargeted and targeted attacks, requiring defining a custom loss function for the pretrained models. where $f(x) = -\ell(x, y)$ for untargeted attacks, and $f(x) = \ell(x, y_\text{adv})$ where $y$ is the true label and $y_\text{adv}$ the adversarial target class chosen at random to be any class other than $y$. We find, unsuprisingly, that targeted attacks are invariably a more challanging problem, resulting in lower success rates and higher average iterations for all varients and datasets.
 
 For example, attacks on a set of $100$ examples with ResNet18 and $\epsilon = 0.005$ with normal FW algorithim using decaying rule, acheived a success rate of $0.93$ requiring $5.44$ iterations on average in the untargeted case, but a success rate of $0.63$ and $13.26$ iterations in the targeted case.
+
+\subsection{Stepsize}
+The methods for stepsize were implemented as follows: Lipschitz constant-based (fixed) stepsize, where the stepsize is determined using the Lipschitz constant \(L\) with \(\gamma_t = \frac{1}{L}\); exact inesearching, which solves the optimization problem \(\arg \min_{\gamma} f(x + \gamma d_t)\) where \(\gamma \in (0,1]\); Decaying stepsize, where the stepsize decreases over time according to \(\gamma_t = \frac{2}{t + 2}\); and Armijo-rule search, which chooses \(\gamma_t\) to satisfy the Armijo rule \(f(x + \gamma_t d_t) \leq f(x) + \delta \gamma_t \nabla f(x)^T d_t\), where \(delta \in (0,1)\) controls the sufficient decrease condition.
+
+We found the application of linesearching techniques to be largely detrimental to attack sucess rate, which we attribute to the non-convex nature of the problem. We observed that both line-searching rules often quickly found high cost (unsucessful adversarial examples) local minima, and fail to escape by taking minimal steps thereafter. Of all varients, the application of momentum was most effective at improving both attack success rate and avg. iter. for convergence of linesearching methods, but still underperfomed compared to decaying rule.
+
+\subsection{Momentum}
+
+Momentum proved highly effective at reducing the number of iterations required for convergence with minimal effect attack sucess rate. On a test of $1000$ examples from CIFAR-10. Normal FW provided an ASR of $88.7\%$ with average of $11.39$ iterations. FW with momentum (\beta = 0.8) acheived $89.5\%$ ASR and $8.47$ mean iterations, indicating a significant improvement in convergence (see Figure \ref{fig:momentum}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{plots/momentum.png}
+    \caption{Comparison of $g_t^\text{FW}$ of FW and momentum varient targeted attacks on ResNet-20 with $\epsilon = 0.007$ and $\beta = 0.8, N = 1000$.}
+    \label{fig:momentum}
+\end{figure}
 
 \subsection{Varients}
 
@@ -190,21 +210,25 @@ For example, attacks on a set of $100$ examples with ResNet18 and $\epsilon = 0.
         AFW & 87.3 & 45 & 88.0 & 43 & 86.2 & 10.2 \\
         PFW & 86.5 & 47 & 87.2 & 44 & 82.2 & 11.2 \\
         \bottomrule
-	\label{table:varients}
     \end{tabular}
     }
     \caption{Attack Success Rate (ASR) and Average Iterations of Frank-Wolfe Algorithm and Variants for Targeted Adversarial Attacks on 1000 Examples from Three Datasets with $20$ maximum iterations and decaying stepsize rule.}
-    \label{tab:algorithm_performance}
+	\label{table:varients}
 \end{table}
-We observe that the difficulity of the optimization problem, as influecned by the choice of dataset to attack, $\epsilon$ choice, and perfroming either targeted or untargeted attacks will effect the number of Away Steps taken by AFW. Targeted attacks on CIFAR-10 as described in table 
+We note that $\epsilon$ values were chosen to create a difficult optimization problem that highlighted diffrences in convergence between algorithims, and $\epsilon$ could have been easily chosen to ensure $100\%$ ASR on all datasets.
+
+We observe that the difficulity of the optimization problem, as influecned by the choice of dataset to attack, $\epsilon$ choice, and perfroming either targeted or untargeted attacks will effect the number of Away Steps taken by AFW. Targeted attacks on CIFAR-10 as described in table \ref{table:varients}. For Both attacks on LeNet5 and FMNIST model, AFW was never seen to take an away step. However, when attacking ResNet-20, it is seen to have taken Away Steps $11.5\%$ of the time. As it takes majority FW steps, the convergence of AFW is seen to closely follow that of normal FW (see Figure \ref{fig:converge-compare}).
 
 %REPLACE WITH FINAL RESULTS
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{plots/mdl_compare_avg_FWgap_by_iter.png}
-    \caption{Average $g^\text{FW}_t$ for each Algorithim by Iteration for Targeted Attacks on ResNet-18 (CIFAR-10). $\epsilon = 0.005$.}
+    \caption{Average $g^\text{FW}_t$ for each Algorithim by Iteration for Targeted Attacks on ResNet-20 (CIFAR-10) with decaying rule and $\epsilon = 0.005$.}
     \label{fig:converge-compare}
 \end{figure}
+
+We observe that this application does not favor the use of PFW. Which we attribute to the lack of linesearching, which we found to be inappropiate for the non-convex application. Analysis of the away costs at each iteration showed that $g_t^\text{A} is often negative, indicating that it is still a good atom in the active set $S_t$. In the absense of linesearching, PFW with decaying rule frequently will over minimize, or even drop the contribution $v_t$ to $x_t$ harming convergence and attack sucess rate. We observe that the use of linesearching harms the  of PFW less so than the other two algorithims, making their performance more comparable. But still suffers form the afformentioned problems associated with non-convexity and linesearching.
+
 
 
 \section{Convergence Analysis}
