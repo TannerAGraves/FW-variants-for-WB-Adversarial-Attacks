@@ -7,7 +7,7 @@ import copy
 
 ### ATTACKS
 class AttackStep:
-    def __init__(self, method, epsilon, x0_denorm, lmo, stepsize_method=None, momentum=0.2):
+    def __init__(self, method, epsilon, x0_denorm, lmo, stepsize_method=None, momentum=0.8):
         self.method = method
         self.epsilon = epsilon
         self.x0_denorm = x0_denorm
@@ -15,8 +15,10 @@ class AttackStep:
         self.lmo = lmo
         self.momentum = momentum
         self.m_t_last = None
+        self.m_t = None
         self.S_t = [x0_denorm]
         self.A_t = [1]
+        self.x_t_denorm = None
 
     def step(self, x_t_denorm, x_t_grad):
         if self.method == 'fgsm':
@@ -24,9 +26,11 @@ class AttackStep:
         elif self.method == 'fw':
             return self.fw_step(x_t_denorm, x_t_grad)
         elif self.method == 'fw_momentum':
-            return self.fw_step_momentum(x_t_denorm, x_t_grad)
+            return self.fw_step_momentum(x_t_denorm, x_t_grad, momentum=self.momentum)
         elif self.method == 'fw_away':
             return self.fw_step_away(x_t_denorm, x_t_grad)
+        elif self.method == 'fw_away_m':
+            return self.fw_step_away_m(x_t_denorm, x_t_grad, momentum=self.momentum)
         elif self.method == 'fw_pair':
             return self.fw_step_pairwise(x_t_denorm, x_t_grad)
         elif self.method == 'fw_pair_test':
@@ -185,6 +189,73 @@ class AttackStep:
         debug_info['max_step'] = max_step
         # determine stepsize according to rule
         fw_stepsize = self.stepsize_method.get_stepsize(x_t, d_t, max_step)
+        info['stepsize'] = fw_stepsize
+
+        self.S_t, self.A_t, update_info = self.update_active_away(fw_stepsize, s_t, v_t_idx, step_type,
+                                                debug=debug)
+
+        ## UPDATE x_t
+        perturbed_image_step = x_t + fw_stepsize * d_t
+        perturbed_image_alpha = sum([alpha * v for alpha, v in zip(self.A_t, self.S_t)])
+        if use_conv_comb_x_t: # use x_t = A_t.T * S_t or x_t + gamma * d_t ?
+            perturbed_image = perturbed_image_alpha
+        else:
+            perturbed_image = perturbed_image_step
+        perturbed_image = torch.clamp(perturbed_image, 0, 1)
+
+        # LOGGING and DEBUG info
+        info['alphas'] = self.A_t
+        debug_info['L_inf_step'] = torch.max(torch.abs(perturbed_image_step - self.x0_denorm)).item()
+        debug_info['L_inf_alpha'] = torch.max(torch.abs(perturbed_image_alpha - self.x0_denorm)).item()
+        alpha_np = ((perturbed_image_alpha).squeeze(0).permute(1, 2, 0).numpy()).clip(0,1)
+        step_np = ((perturbed_image_step).squeeze(0).permute(1, 2, 0).numpy()).clip(0,1)
+        debug_info['step_alpha_diffFactor'] = (alpha_np - step_np).sum() / self.epsilon
+        info.update(update_info)
+        if debug:
+            info.update(debug_info)
+        self.last_d = d_t
+        return perturbed_image, gap_FW, info
+
+    def fw_step_away_m(self, x_t, g_t, debug=True, momentum=0.8):
+        # alg from FW_varients.pdf
+        use_conv_comb_x_t = False
+        info = {}
+        debug_info = {}
+        
+        # FW direction
+        self.m_t = (1 - momentum) * g_t + momentum * self.m_t
+        s_t = self.lmo.get(self.m_t)
+        d_t_FW = s_t - x_t
+        # AWAY direction. From set of vertices already visited
+        away_sign = 1
+        away_costs = []
+        for v in self.S_t:
+            away_costs.append(torch.sum(away_sign * g_t * v).item()) 
+        v_t_idx = np.argmax(away_costs) 
+        v_t = self.S_t[v_t_idx]
+        d_t_AWAY = x_t - v_t
+        # check optimality (FW gap)
+        gap_FW = torch.sum(-g_t * d_t_FW).item()
+        gap_AWAY = torch.sum(-g_t * d_t_AWAY).item()
+        info['gap_FW'] = gap_FW
+        info['gap_AS'] = gap_AWAY
+        debug_info['awayCosts'] = away_costs
+
+        # check which direction is closer to the -gradient
+        if (gap_FW >= gap_AWAY) or (len(self.S_t) == 1): # don't step away if only one vertex in S_t
+            step_type = 'FW'
+            d_t = d_t_FW
+            max_step = 1
+        else:
+            step_type = 'AS'
+            d_t = d_t_AWAY
+            alpha_v_t = self.A_t[v_t_idx]
+            max_step = 1 if alpha_v_t == 1 else alpha_v_t / (1 - alpha_v_t)  # avoid divide by zero when alpha = 1
+        self.d_t = d_t
+        info['step_type'] = step_type
+        debug_info['max_step'] = max_step
+        # determine stepsize according to rule
+        fw_stepsize = self.stepsize_method.get_stepsize(self.stepsize_method.x_t_denorm, d_t, max_step)
         info['stepsize'] = fw_stepsize
 
         self.S_t, self.A_t, update_info = self.update_active_away(fw_stepsize, s_t, v_t_idx, step_type,

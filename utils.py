@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from AttackStep import AttackStep
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 class LMO:
     def __init__(self, epsilon, x0, p):
@@ -126,19 +127,24 @@ class AdversarialLoss(nn.Module):
             return -F.nll_loss(outputs, targets)
         
 class stepsize():
-    def __init__(self, model, strat, x0, fixed_size = 1, ls_criterion=None, ls_target = None, ls_num_samples=20):
+    def __init__(self, model, strat, x0, fixed_size = 1, ls_criterion=None, ls_target = None, ls_num_samples=50, renorm = None):
         if isinstance(strat, (float, int)):
             fixed_size = strat
             strat = 'fixed'
         self.model = model
         self.strat = strat
         self.fixed_size = fixed_size
+        # used for amjo
         self.x0 = x0
         self.x_t_grad = None
         self.loss0 = None
+
+        # used for ls
         self.ls_criterion = ls_criterion
         self.ls_target = ls_target
         self.ls_num_samples = ls_num_samples
+        self.renorm = renorm
+
         self.stepsize = fixed_size # will be updated if using other method
         if self.strat not in ['fixed', 'ls', 'decay', 'amjo']:
             raise Exception("Accepted stepsize rules are ['fixed', 'ls', 'decay']")
@@ -155,8 +161,10 @@ class stepsize():
             steps = [max_step * (i + 1) / self.ls_num_samples for i in range(self.ls_num_samples)]
             self._sizes_ls = steps
             for step in steps:
-                output = self.model(x_tc + step * d_tc)
-                losses.append(self.ls_criterion(output, self.ls_target).item())
+                new_x = self.renorm(x_tc + step * d_tc)
+                output = self.model(new_x)
+                loss = self.ls_criterion(output, self.ls_target).item()
+                losses.append(loss)
         best_idx = np.argmin(losses)
         self.stepsize = steps[best_idx]
         
@@ -200,29 +208,30 @@ class stepsize():
 
 
 
-    # def stepsize_armijo(self, x_t, d_t, max_step = 1):
-    #     info_step = {}
-    #     x_tc = x_t.clone().detach()
-    #     d_tc = d_t.clone().detach()
-    #     step_size = max_step
-    #     gamma = 0.25
-    #     delta = 0.5
-    #     initial_loss = self.ls_criterion(self.model(x_tc), self.ls_target)#F.cross_entropy(self.model(x_k), target).item()
-    #     min_loss = float('inf')
+    def stepsize_armijo(self, x_t, d_t, max_step = 1):
+        info_step = {}
+        x_tc = x_t.clone().detach()
+        d_tc = d_t.clone().detach()
+        step_size = max_step
+        best_stepsize = max_step
+        gamma = 0.25
+        delta = 0.5
+        initial_loss = self.ls_criterion(self.model(self.renorm(x_tc)), self.ls_target)#F.cross_entropy(self.model(x_k), target).item()
+        min_loss = float('inf')
         
-    #     while step_size > 1e-4:
-    #         new_point = x_tc + step_size * d_tc
-    #         new_loss = self.ls_criterion(self.model(new_point), self.ls_target)#F.cross_entropy(self.model(new_point), target).item()
-    #         RHS = initial_loss + gamma * step_size * torch.sum(self.x_t_grad * d_tc).item()
-    #         if new_loss < min_loss:
-    #             min_loss = new_loss
-    #             best_stepsize = step_size
-    #         if new_loss <= RHS:
-    #             return step_size
+        while step_size > 1e-4:
+            new_point = self.renorm(x_tc + step_size * d_tc)
+            new_loss = self.ls_criterion(self.model(new_point), self.ls_target)#F.cross_entropy(self.model(new_point), target).item()
+            RHS = initial_loss + gamma * step_size * torch.sum(self.x_t_grad * d_tc).item()
+            if new_loss < min_loss:
+                min_loss = new_loss
+                best_stepsize = step_size
+            if new_loss <= RHS:
+                return step_size
             
-    #         step_size *= delta
+            step_size *= delta
         
-    #     return best_stepsize
+        return best_stepsize
 
 
     def get_stepsize(self, x_t, d_t, max_step = 1):
@@ -332,7 +341,7 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
         else:
             criterion = AdversarialLoss(target_model.num_classes)
         lmo = LMO(epsilon, x0_denorm, norm_p)
-        stepsize_method = stepsize(model, fw_stepsize_rule, x0_denorm, ls_criterion=criterion, ls_target=target)
+        stepsize_method = stepsize(model, fw_stepsize_rule, x0_denorm, ls_criterion=criterion, ls_target=target, renorm = target_model.renorm)
         attackStep = AttackStep(method, epsilon, x0_denorm, lmo, stepsize_method)
         #x_t.requires_grad = True  #Set requires_grad attribute of tensor. Important for Attack
         had_first_success = False
@@ -369,6 +378,8 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
             x_t_grad = x_t.grad#.data
             # Restore the data to its original scale
             x_t_denorm = target_model.denorm(x_t)
+
+            # save information needed for linesearching stepsize rules
             stepsize_method.x_t_grad = x_t_grad.clone().detach()
 
             # Call Attack
@@ -433,3 +444,60 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
 
     # Return the accuracy and an adversarial example
     return final_acc, adv_examples, pd.DataFrame(hist)
+
+def plot_convergence(hist_dfs, algs):
+    final_hist_dfs = [hist.groupby('example_idx').tail(1) for hist in hist_dfs]
+    for i, final_hist in enumerate(final_hist_dfs):
+        targeted = 'targeted_success' in final_hist.columns
+        ASR_text = 'Targeted Attack Success Rate' if targeted else 'Attack Success Rate'
+        alg = algs[i]
+        print(alg)
+        print(f"\t{ASR_text}: {final_hist['targeted_success' if targeted else 'success'].mean()}")
+        print(f"\tAvg iters: {final_hist['FW_iter'].mean()}")
+        if alg == 'fw_away':
+            st = hist_dfs[i].groupby('step_type').size().to_dict()
+            if len(st.keys()) > 1:
+                print(f"\tStep Types: FW {st['FW']}, AS {st['AS']}. {100 * st['AS'] / (st['FW'] + st['AS']):.1f}% Away Steps.")
+            else:
+                print("\t100% FW steps")
+        plt.plot(hist_dfs[i].groupby('FW_iter')['gap_FW'].mean(), label=algs[i])
+    plt.xlabel("Iteration t")
+    plt.ylabel("Average FW gap")
+    plt.legend()
+    plt.show()
+
+def display_examples(ex_saver, epsilon, classes, show_atk_mag = False, n_col = 3, offset = 2):
+    # classes either int corresponding to number of classes, or list with class names
+    if isinstance(classes, int):
+        classes = list(range(classes))
+    dim = len(ex_saver.adv_x0[0].shape)
+    
+    
+    n_col = min(n_col, len(ex_saver.adv_pred))
+    cmap = None if dim > 2 else 'gray'
+
+    fig, axs = plt.subplots(3,n_col)
+    for i in range(n_col):
+        ex_idx = i + offset
+        true = ex_saver.adv_true[ex_idx]
+        pred = ex_saver.adv_pred[ex_idx]
+        x0 = ex_saver.adv_x0[ex_idx]
+        atk = (ex_saver.adv_atk[ex_idx]+epsilon)/(2*epsilon)
+        if show_atk_mag:
+            atk = np.abs(atk-0.5)
+            atk *= 1/np.max(atk)
+        atk = np.clip(atk,0,1)
+        xt = ex_saver.adv_xt[ex_idx]
+        prob_true = ex_saver.adv_true_init_prob[ex_idx]
+        prob_adv = ex_saver.adv_final_prob[ex_idx]
+        axs[0, i].imshow(x0, cmap = cmap)
+        axs[0, i].axis('off')
+        axs[0, i].set_title(f"Orginal: {classes[true]}\np = {prob_true:.2f}", fontsize=10)
+        axs[1, i].imshow(atk, cmap = cmap)
+        axs[1, i].axis('off')
+        axs[1, i].set_title(f"Scaled offset:\nϵ = {epsilon}", fontsize=10)
+        axs[2, i].imshow(xt, cmap = cmap)
+        axs[2, i].axis('off')
+        axs[2, i].set_title(f"Adv Pred: {classes[pred]}\np = {prob_adv:.2f}", fontsize=10)
+    plt.tight_layout(pad=1.0, w_pad=-15, h_pad=1.0)
+    plt.show()
