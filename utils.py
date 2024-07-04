@@ -214,7 +214,7 @@ class stepsize():
         d_tc = d_t.clone().detach()
         step_size = max_step
         best_stepsize = max_step
-        gamma = 0.25
+        gamma = 0.5
         delta = 0.5
         initial_loss = self.ls_criterion(self.model(self.renorm(x_tc)), self.ls_target)#F.cross_entropy(self.model(x_k), target).item()
         min_loss = float('inf')
