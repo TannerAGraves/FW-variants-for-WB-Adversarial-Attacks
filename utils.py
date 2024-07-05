@@ -261,11 +261,6 @@ def early_stopper(criterion, t, success, first_success, info, gap_FW_tol, max_fw
         stop_reason = 'max_iter'
         if not success: # attack failed
             new_correct +=1
-    elif (criterion == 'gap_pairwise') and (info is not None) and (info['gap_pairwise'] < gap_FW_tol):
-        if not success: # attack failed
-            new_correct +=1
-        stop = True
-        stop_reason = 'gap_pairwise'
     else:
         # no stop criteria met, continue
         stop = False
