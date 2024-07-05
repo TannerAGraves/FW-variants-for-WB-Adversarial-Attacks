@@ -59,7 +59,7 @@ class AdversarialLoss(nn.Module):
         self.num_classes = num_classes
         self.specific_label = specific_label
 
-    def forward(self, outputs, targets):
+    def forward1(self, outputs, targets):
         """
         Compute the adversarial loss.
         
@@ -103,7 +103,7 @@ class AdversarialLoss(nn.Module):
             loss = -average_incorrect_log_probs
             return loss.mean()
         
-    def forward1(self, outputs, targets):
+    def forward(self, outputs, targets):
         """
         Compute the adversarial loss.
         

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  3 JUL 2024 16:57
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  4 JUL 2024 15:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -198,7 +198,14 @@ File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count294
 \l__pdf_internal_box=\box58
 )
-No file report_scratch.aux.
+(./report_scratch.aux
+
+LaTeX Warning: Label `alg:cap' multiply defined.
+
+
+LaTeX Warning: Label `alg:cap' multiply defined.
+
+)
 \openout1 = `report_scratch.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 15.
@@ -215,7 +222,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 15.
 LaTeX Font Info:    ... okay on input line 15.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 15.
 LaTeX Font Info:    ... okay on input line 15.
-(c:/texlive/2024/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+ (c:/texlive/2024/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count295
 \scratchdimen=\dimen169
@@ -255,17 +262,11 @@ File: ursfs.fd 1998/03/24 rsfs font definition file (jk)
 [4]
 
 [5]
-
-LaTeX Warning: Reference `fig:adv_ex' on page 6 undefined on input line 151.
-
 <plots/adv_ex.png, id=32, 196.5744pt x 113.7048pt>
 File: plots/adv_ex.png Graphic file (type png)
 <use plots/adv_ex.png>
 Package pdftex.def Info: plots/adv_ex.png  used on input line 155.
 (pdftex.def)             Requested size: 345.0pt x 199.56932pt.
-
-LaTeX Warning: Reference `fig:eps' on page 6 undefined on input line 161.
-
 
 
 [6 <./plots/adv_ex.png>]
@@ -276,52 +277,42 @@ Package pdftex.def Info: plots/eps_choice.png  used on input line 168.
 (pdftex.def)             Requested size: 241.49895pt x 181.12799pt.
 
 
-LaTeX Warning: Reference `fig:converge-compare' on page 7 undefined on input li
-ne 173.
-
-
-
 [7 <./plots/eps_choice.png>]
 <plots/momentum.png, id=46, 400.3758pt x 312.2064pt>
 File: plots/momentum.png Graphic file (type png)
 <use plots/momentum.png>
-Package pdftex.def Info: plots/momentum.png  used on input line 188.
+Package pdftex.def Info: plots/momentum.png  used on input line 194.
 (pdftex.def)             Requested size: 241.49895pt x 188.32094pt.
 
 
 [8]
-
-LaTeX Warning: Reference `table:varients' on page 9 undefined on input line 215
-.
-
-<plots/mdl_compare_avg_FWgap_by_iter.png, id=50, 556.0775pt x 433.62pt>
+<plots/mdl_compare_avg_FWgap_by_iter.png, id=51, 556.0775pt x 433.62pt>
 File: plots/mdl_compare_avg_FWgap_by_iter.png Graphic file (type png)
 <use plots/mdl_compare_avg_FWgap_by_iter.png>
 Package pdftex.def Info: plots/mdl_compare_avg_FWgap_by_iter.png  used on input
- line 220.
+ line 228.
 (pdftex.def)             Requested size: 241.49895pt x 188.31882pt.
 
 
 [9 <./plots/momentum.png>]
 
-[10 <./plots/mdl_compare_avg_FWgap_by_iter.png>] (./report_scratch.aux)
+[10 <./plots/mdl_compare_avg_FWgap_by_iter.png>]
+
+[11] (./report_scratch.aux)
  ***********
 LaTeX2e <2024-06-01>
 L3 programming layer <2024-05-27>
  ***********
 
 
-LaTeX Warning: There were undefined references.
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 2988 strings out of 473600
- 46234 string characters out of 5732738
+ 2991 strings out of 473600
+ 46303 string characters out of 5732738
  1942894 words of memory out of 5000000
- 25843 multiletter control sequences out of 15000+600000
+ 25844 multiletter control sequences out of 15000+600000
  565406 words of font info for 64 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  57i,11n,65p,1173b,324s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -338,12 +329,12 @@ texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb><c:/texlive/20
 st/fonts/type1/public/amsfonts/cm/cmr7.pfb><c:/texlive/2024/texmf-dist/fonts/ty
 pe1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/
 amsfonts/cm/cmsy10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/
-cm/cmsy7.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.
-pfb>
-Output written on report_scratch.pdf (10 pages, 332422 bytes).
+cm/cmsy7.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.p
+fb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
+Output written on report_scratch.pdf (11 pages, 342646 bytes).
 PDF statistics:
- 125 PDF objects out of 1000 (max. 8388607)
- 73 compressed objects within 1 object stream
+ 133 PDF objects out of 1000 (max. 8388607)
+ 78 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  21 words of extra memory for PDF output out of 10000 (max. 10000000)
 

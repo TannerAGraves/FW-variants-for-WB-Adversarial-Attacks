@@ -153,7 +153,7 @@ Finally, ResNet 20 is a comparitively large CNN with 20 layers. We use a pretrai
 \begin{figure}[H]
     \centering
     \includegraphics[width=\textwidth]{plots/adv_ex.png}
-    \caption{Representative attacks on LeNet, FMNIST, and ResNet 18.}
+    \caption{Representative attacks on LeNet, FMNIST, and ResNet-20.}
     \label{fig:adv_ex}
 \end{figure}
 
@@ -177,6 +177,9 @@ We implemented both untargeted and targeted attacks, requiring defining a custom
 
 For example, attacks on a set of $100$ examples with ResNet18 and $\epsilon = 0.005$ with normal FW algorithim using decaying rule, acheived a success rate of $0.93$ requiring $5.44$ iterations on average in the untargeted case, but a success rate of $0.63$ and $13.26$ iterations in the targeted case.
 
+\subsection{$L_\infty$ vs $L_2$ Constraints}
+
+
 \subsection{Stepsize}
 The methods for stepsize were implemented as follows: Lipschitz constant-based (fixed) stepsize, where the stepsize is determined using the Lipschitz constant \(L\) with \(\gamma_t = \frac{1}{L}\); exact inesearching, which solves the optimization problem \(\arg \min_{\gamma} f(x + \gamma d_t)\) where \(\gamma \in (0,1]\); Decaying stepsize, where the stepsize decreases over time according to \(\gamma_t = \frac{2}{t + 2}\); and Armijo-rule search, which chooses \(\gamma_t\) to satisfy the Armijo rule \(f(x + \gamma_t d_t) \leq f(x) + \delta \gamma_t \nabla f(x)^T d_t\), where \(delta \in (0,1)\) controls the sufficient decrease condition.
 
@@ -184,7 +187,7 @@ We found the application of linesearching techniques to be largely detrimental t
 
 \subsection{Momentum}
 
-Momentum proved highly effective at reducing the number of iterations required for convergence with minimal effect attack sucess rate. On a test of $1000$ examples from CIFAR-10. Normal FW provided an ASR of $88.7\%$ with average of $11.39$ iterations. FW with momentum (\beta = 0.8) acheived $89.5\%$ ASR and $8.47$ mean iterations, indicating a significant improvement in convergence (see Figure \ref{fig:momentum}).
+Momentum proved highly effective at reducing the number of iterations required for convergence with minimal effect attack sucess rate. On a test of $1000$ examples from CIFAR-10. Normal FW provided an ASR of $88.7\%$ with average of $11.39$ iterations. FW with momentum ($\beta = 0.8$) acheived $89.5\%$ ASR and $8.47$ mean iterations, indicating a significant improvement in convergence (see Figure \ref{fig:momentum}). This is seen to outperform all other varients with the same parameters, achiving appreciably better ASR and mean convergence time.
 
 \begin{figure}[H]
     \centering
@@ -227,7 +230,7 @@ We observe that the difficulity of the optimization problem, as influecned by th
     \label{fig:converge-compare}
 \end{figure}
 
-We observe that this application does not favor the use of PFW. Which we attribute to the lack of linesearching, which we found to be inappropiate for the non-convex application. Analysis of the away costs at each iteration showed that $g_t^\text{A} is often negative, indicating that it is still a good atom in the active set $S_t$. In the absense of linesearching, PFW with decaying rule frequently will over minimize, or even drop the contribution $v_t$ to $x_t$ harming convergence and attack sucess rate. We observe that the use of linesearching harms the  of PFW less so than the other two algorithims, making their performance more comparable. But still suffers form the afformentioned problems associated with non-convexity and linesearching.
+We observe that this application does not favor the use of PFW. Which we attribute to the lack of linesearching, which we found to be inappropiate for the non-convex application. Analysis of the away costs at each iteration showed that $g_t^\text{A}$ is often negative, indicating that it is still a good atom in the active set $S_t$. In the absense of linesearching, PFW with decaying rule frequently will over minimize, or even drop the contribution $v_t$ to $x_t$ harming convergence and attack sucess rate. We observe that the use of linesearching harms the  of PFW less so than the other two algorithims, making their performance more comparable. But still suffers form the afformentioned problems associated with non-convexity and linesearching.
 
 
 
