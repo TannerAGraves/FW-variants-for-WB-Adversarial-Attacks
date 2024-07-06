@@ -1,14 +1,14 @@
 # Fdb version 4
-["bibtex report_scratch"] 1720291324.48075 "report_scratch.aux" "report_scratch.bbl" "report_scratch" 1720291327.27762 0
+["bibtex report_scratch"] 1720293148.58206 "report_scratch.aux" "report_scratch.bbl" "report_scratch" 1720293211.61529 0
   "./ref.bib" 1720264306 4185 a49d57dfb55973616b88e9e7f1f5cf0d ""
   "c:/texlive/2024/texmf-dist/bibtex/bst/base/plain.bst" 1717772021 20613 bd3fbfa9f64872b81ac57a0dd2ed855f ""
-  "report_scratch.aux" 1720291326 4393 8fa525147111eca2c6d4c11fbc118611 "pdflatex"
+  "report_scratch.aux" 1720293210 4393 9f7a12868d4cceb397c0abc62c7b8c6e "pdflatex"
   (generated)
   "report_scratch.bbl"
   "report_scratch.blg"
   (rewritten before read)
-["pdflatex"] 1720291324.97635 "c:/Users/JIC/Documents/UNIPD/Optimization/FW-variants-for-WB-Adversarial-Attacks/Report/report_scratch.tex" "report_scratch.pdf" "report_scratch" 1720291327.27829 0
-  "c:/Users/JIC/Documents/UNIPD/Optimization/FW-variants-for-WB-Adversarial-Attacks/Report/report_scratch.tex" 1720291321 30548 c14bb25356ad3491f060f6c3e9af4bbe ""
+["pdflatex"] 1720293209.32345 "c:/Users/JIC/Documents/UNIPD/Optimization/FW-variants-for-WB-Adversarial-Attacks/Report/report_scratch.tex" "report_scratch.pdf" "report_scratch" 1720293211.61592 0
+  "c:/Users/JIC/Documents/UNIPD/Optimization/FW-variants-for-WB-Adversarial-Attacks/Report/report_scratch.tex" 1720293208 30492 9f47f13d316541c1bce876ecaea1e046 ""
   "c:/texlive/2024/texmf-dist/fonts/map/fontname/texfonts.map" 1717773367 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "c:/texlive/2024/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1717771595 1004 54797486969f23fa377b128694d548df ""
   "c:/texlive/2024/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex8.tfm" 1717771595 988 bdf658c3bfc2d96d3c8b02cfc1c94c20 ""
@@ -84,9 +84,9 @@
   "plots/mdl_compare_avg_FWgap_by_iter.png" 1719740201 27775 290b9ce3a1cf5a0f519107d4f5816f48 ""
   "plots/momentum.png" 1720018460 21869 014b4ee4decd81b4ac856a9e19d4191c ""
   "plots/norm.png" 1720192922 58240 fb6b5ecfa2438943efd7263bb37ea554 ""
-  "report_scratch.aux" 1720291326 4393 8fa525147111eca2c6d4c11fbc118611 "pdflatex"
-  "report_scratch.bbl" 1720291324 1452 9151e5316989d7f202d6cd4c6471dc22 "bibtex report_scratch"
-  "report_scratch.tex" 1720291321 30548 c14bb25356ad3491f060f6c3e9af4bbe ""
+  "report_scratch.aux" 1720293210 4393 9f7a12868d4cceb397c0abc62c7b8c6e "pdflatex"
+  "report_scratch.bbl" 1720293149 1452 9151e5316989d7f202d6cd4c6471dc22 "bibtex report_scratch"
+  "report_scratch.tex" 1720293208 30492 9f47f13d316541c1bce876ecaea1e046 ""
   (generated)
   "report_scratch.aux"
   "report_scratch.log"

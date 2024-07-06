@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  6 JUL 2024 20:42
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  6 JUL 2024 21:13
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -265,7 +265,7 @@ File: ursfs.fd 1998/03/24 rsfs font definition file (jk)
 <plots/adv_ex.png, id=32, 196.5744pt x 113.7048pt>
 File: plots/adv_ex.png Graphic file (type png)
 <use plots/adv_ex.png>
-Package pdftex.def Info: plots/adv_ex.png  used on input line 157.
+Package pdftex.def Info: plots/adv_ex.png  used on input line 156.
 (pdftex.def)             Requested size: 345.0pt x 199.56932pt.
 
 
@@ -273,7 +273,7 @@ Package pdftex.def Info: plots/adv_ex.png  used on input line 157.
 <plots/eps_choice.png, id=39, 462.528pt x 346.896pt>
 File: plots/eps_choice.png Graphic file (type png)
 <use plots/eps_choice.png>
-Package pdftex.def Info: plots/eps_choice.png  used on input line 170.
+Package pdftex.def Info: plots/eps_choice.png  used on input line 169.
 (pdftex.def)             Requested size: 241.49895pt x 181.12799pt.
 
 
@@ -281,7 +281,7 @@ Package pdftex.def Info: plots/eps_choice.png  used on input line 170.
 <plots/norm.png, id=46, 318.59026pt x 314.3745pt>
 File: plots/norm.png Graphic file (type png)
 <use plots/norm.png>
-Package pdftex.def Info: plots/norm.png  used on input line 188.
+Package pdftex.def Info: plots/norm.png  used on input line 187.
 (pdftex.def)             Requested size: 207.0021pt x 204.26904pt.
 
 
@@ -289,7 +289,7 @@ Package pdftex.def Info: plots/norm.png  used on input line 188.
 <plots/momentum.png, id=52, 400.3758pt x 312.2064pt>
 File: plots/momentum.png Graphic file (type png)
 <use plots/momentum.png>
-Package pdftex.def Info: plots/momentum.png  used on input line 228.
+Package pdftex.def Info: plots/momentum.png  used on input line 227.
 (pdftex.def)             Requested size: 241.49895pt x 188.32094pt.
 
 
@@ -298,7 +298,7 @@ Package pdftex.def Info: plots/momentum.png  used on input line 228.
 File: plots/mdl_compare_avg_FWgap_by_iter.png Graphic file (type png)
 <use plots/mdl_compare_avg_FWgap_by_iter.png>
 Package pdftex.def Info: plots/mdl_compare_avg_FWgap_by_iter.png  used on input
- line 262.
+ line 260.
 (pdftex.def)             Requested size: 241.49895pt x 188.31882pt.
 
 
@@ -330,7 +330,7 @@ Here is how much of TeX's memory you used:
  25867 multiletter control sequences out of 15000+600000
  565406 words of font info for 64 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 57i,11n,65p,1167b,324s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 57i,11n,65p,1169b,324s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><c:/tex
 live/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/texlive/2024
 /texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2024/texmf-di
@@ -346,7 +346,7 @@ pe1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/
 amsfonts/cm/cmsy10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/
 cm/cmsy7.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.p
 fb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on report_scratch.pdf (13 pages, 398031 bytes).
+Output written on report_scratch.pdf (13 pages, 398024 bytes).
 PDF statistics:
  142 PDF objects out of 1000 (max. 8388607)
  83 compressed objects within 1 object stream

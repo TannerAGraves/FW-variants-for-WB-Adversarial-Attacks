@@ -16,7 +16,7 @@
 
 \maketitle 
 \section{Abstract}
-With deep neural networks becoming ubiquitous in application, adversarial attacks have received much attention, as it has proved remarkably easy to create adversarial examples- genuine data that undergoes a minimal and unobtrusive corruption process in order to maximally harm the performance of a model. Access to a models architecture can enable white-box attacks, where gradients of loss with respect to input examples are exploited to create adversarial examples. The requirement that examples be minimally perturbed is a constraint on the optimization. The ability of Frank-wolf and variants have gathered much attention for their ability to be efficiently create adversarial examples while staying in a constraint set. In this paper, we discuss the application of Frank-Wolfe and two variants to this non-convex constrained optimization problem. Furthermore we discuss popular optimizations and their effect convergence and attack efficacy, comparing performance on attacks on models trained on MNSIT, FashionMNIST, and CFAIR-10 datasets. Finally, there is a discussion of the theoretical underpinnings of each algorithm. 
+With deep neural networks becoming ubiquitous in application, adversarial attacks have received much attention, as it has proved remarkably easy to create adversarial examples- genuine data that undergoes a minimal and unobtrusive corruption process in order to maximally harm the performance of a model. Access to a models architecture can enable white-box attacks, where gradients of loss with respect to input examples are exploited to create adversarial examples. The requirement that examples be minimally perturbed is a constraint on the optimization. The ability of Frank-wolf and variants have gathered much attention for their ability to be efficiently create adversarial examples while staying in a constraint set. In this paper, we discuss the application of Frank-Wolfe and three variants to this non-convex constrained optimization problem. Furthermore we discuss popular optimizations and their effect convergence and attack efficacy, comparing performance on attacks on models trained on MNSIT, FashionMNIST, and CFAIR-10 datasets. Finally, there is a discussion of the theoretical underpinnings of each algorithm. 
 
 \section{Introduction}
 Adversarial attacks on CNNs are often stated as the following constrained optimization problem:
@@ -92,8 +92,7 @@ The innovation of the Away-Step and Pairwise variant is to recognize contributio
 \subsection{Away-Step Frank-Wolfe}
 The away-step FW algorithm (AFW) defines a gap in two possible directions: the typical FW step $d_t^\text{FW}$ and an away direction $d_t^\text{A} = x_t - v_t$ where $v_t  \in {\arg \max}_{v\in S_t} \langle v, \nabla f(x_t)\rangle$. By comparing the gaps associated with the two directions, the algorithm compares the cost of taking a typical FW step to the cost associated with moving away from active atoms in $S_t$. Should this gap be less than that of moving towards the Frank Wolfe direction, the influence of the selected away atom $v_t\in S_t$ will be diminished, and even dropped if the corresponding $\alpha_{v_t} \leq 0$. 
 The $\alpha$ updates can be seen to be inverse for that of a normal FW step. Here influence of $v_t$ is distributed uniformly to other active atoms. New coefficients for the convex combination are for $v_t$, $\alpha_{v_{t}} := (1+\gamma_t)\alpha_{v_t} - \gamma_t$, and otherwise $\alpha_{v_{t+1}} := (1+\gamma_t)\alpha_{v}$. 
-The algorithm enables a "drop step" where the contribution of an atom is completely removed from the convex combination, alleviating the problem of oscillation when converging to an optimum on the boundary. 
-This algorithm is proved to have linear convergence for convex problems
+The algorithm enables a "drop step" where the contribution of an atom is completely removed from the convex combination, alleviating the problem of oscillation when converging to an optimum on the boundary, allowing the Variant to have linear convergence for strongly-convex problems.
 \begin{algorithm}[H]
 \caption{Away-Step FW for Adversarial Attacks}\label{alg:cap}
 \begin{algorithmic}[1]
@@ -114,7 +113,7 @@ This algorithm is proved to have linear convergence for convex problems
 		\State $d_t := d_t^\text{A}$, $\gamma_\text{max} := \frac{\alpha_{v_t}}{1- \alpha_{v_t}}$
 	\EndIf
 	\State $x_{t+1} = x_t + \gamma_t d_t$
-	\State Update $\alpha$, $S_{t+1}$ s.t. $\langle \alpha, S_{t+1}\rangle = x_{t+1}$ (See below)
+	\State Update $\alpha$, $S_{t+1}$ s.t. $\langle \alpha, S_{t+1}\rangle = x_{t+1}$ (See above)
 \EndFor
 \end{algorithmic}
 \end{algorithm}
@@ -160,10 +159,10 @@ Finally, ResNet-20 \cite{resnet} is a comparatively large CNN with 20 layers. We
 \end{figure}
 
 We observed that the larger and more complicated a model is, the more susceptible it is to adversarial attack. 
-LeNet5 being a notably small and simple model by contemporary standards, showed remarkable robustness and required attacks well within perceptible levels ($\epsilon \approx 0.3$) before the tested FW methods could reliably produce adversarial examples. While ResNet and FMNIST model can be reliably attacked with $\epsilon$ above $0.07$ and $0.05$ respectively (see Figure \ref{fig:eps}).
+LeNet5 being a notably small and simple model by contemporary standards, showed remarkable robustness and required attacks well within perceptible levels ($\epsilon \approx 0.3$) before the tested FW methods could reliably produce adversarial examples. While ResNet and FMNIST model can be reliably attacked with $\epsilon$ above $0.007$ and $0.05$ respectively (see Figure \ref{fig:eps}).
 
 \subsection{$\epsilon$ Choice}
-Our three different models where retrained on datasets with differing image scales. To allow for comparison of the sensitivity of each model to attacks with different $\epsilon$, at each iteration we normalize to ensure images $x_0$ have mean $0.5$ and variance $1$ to ensure equal relative perturbation of the same $\epsilon$ on all three models. 
+Our three different models where retrained on datasets with differing image scales. To allow for comparison of the sensitivity of each model to attacks with different $\epsilon$, at each iteration we exploit the affine invariance of FW to normalize to ensure images $x_0$ have mean $0.5$ and variance $1$ to ensure equal relative perturbation of the same $\epsilon$ on all three models. 
 
 \begin{figure}[H]
     \centering
@@ -172,7 +171,7 @@ Our three different models where retrained on datasets with differing image scal
     \label{fig:eps}
 \end{figure}
 
-As figure \ref{fig:converge-compare} shows, the different models have vastly different sensitivities to adversarial attacks. LeNet is the most robust of the three requiring large maximum perturbations for reliable attacks. The larger, more complex models can be reliably attacked with imperceptible examples in the case of ResNet or borderline perceptible in the case of the FMNIST model. Representative attacks are shown in figure 2.
+As figure \ref{fig:eps} shows, the different models have vastly different sensitivities to adversarial attacks. LeNet is the most robust of the three requiring large maximum perturbations for reliable attacks. The larger, more complex models can be reliably attacked with imperceptible examples in the case of ResNet or borderline perceptible in the case of the FMNIST model. 
 
 \subsection{Targeted vs. Untargeted Attacks}
 We implemented both untargeted and targeted attacks, requiring defining a custom loss function for the pre-trained models. where $f(x) = -\ell(x, y)$ for untargeted attacks, and $f(x) = \ell(x, y_\text{adv})$ where $y$ is the true label and $y_\text{adv}$ the adversarial target class chosen at random to be any class other than $y$. We find, unsurprisingly, that targeted attacks are invariably a more challenging problem, resulting in lower success rates and higher average iterations for all variants and datasets.
@@ -181,7 +180,7 @@ For example, attacks on a set of $100$ examples with ResNet-20 and $\epsilon = 0
 
 \subsection{$L_\infty$ vs $L_2$ Constraints}
 We implement attacks Linear Minimization oracles to enable both $L_\infty$ and $L_2$ constrained attacks. 
-Choices of $\epsilon$ for the two norms are clearly not comparable as $L_\infty$ is concerned by the maximum perturbation a pixel is perturbed by, doing nothing to disincentives most if not all pixels from being perturbed, where $L_2$ constrains the sum of squares of perturbations. 
+Choices of $\epsilon$ for the two norms are clearly not comparable as $L_\infty$ is concerned by the maximum perturbation a pixel is perturbed by, doing nothing to disincentive most if not all pixels from being perturbed, where $L_2$ constrains the sum of squares of perturbations. 
 
 \begin{figure}[H]
     \centering
@@ -191,7 +190,7 @@ Choices of $\epsilon$ for the two norms are clearly not comparable as $L_\infty$
 \end{figure}
 
 To compare the resulting adversarial examples generated by attacks I chose $\epsilon$ values that gave approximately the same attack success rate of about $62\%$ on CIFAR-10 ($\epsilon_\infty = 0.005, \epsilon_2 = 0.02$) and compare the $L1$ norm of the generated perturbations. In order to get the same success rate we expected see that $L2$ constrained attacks are more efficient at producing attacks, with an average $L1$ of $6.84$ ($\sigma = 0.69$) where $L_\infty$ constrained attacks created attacks with average perturbation $L_1$ of $10.5$. However, we note that both cases produced attacks below with marginal perceptibility with $L_2$ attacks having an average $L_\infty$ of $0.013$ and it being difficult to think of applications were this efficiency is worth the trade off.  We also observe, that it takes longer on average for $L_2$ constrained attacks to converge. Normal FW took 12.71 in $L_\infty$ case and $13.2$ for the $L_2$ case. From our testing we did not see any pirticular varient disproportionately affected by the choice of norm.
-We visualize the magnitude of attacks made by the attacks using the different constraints in figure \ref{fig:norm}. 
+We visualize the magnitude of attacks made with the different constraints in figure \ref{fig:norm}. 
 
 
 \subsection{Step-size}
@@ -221,18 +220,17 @@ Exact-LS & 63.8 & 12.98 & 0.34 \\
 
 \subsection{Momentum}
 
-Momentum proved highly effective at reducing the number of iterations required for convergence with minimal effect attack success rate. On a test of $500$ examples from CIFAR-10. Normal FW provided an ASR of $65.4\%$ with average of $12.78$ iterations. FW with momentum ($\beta = 0.8$) achieved $66.6\%$ ASR and $9.81$ mean iterations, indicating a significant improvement in convergence (see Figure \ref{fig:momentum}). This is seen to outperform all other variants with the same parameters, achieving appreciably better ASR and mean convergence time.
+Momentum proved highly effective at reducing the number of iterations required for convergence with slight imrovement to attack success rate. On a test of $500$ examples from CIFAR-10, normal FW provided an ASR of $65.4\%$ with average of $12.78$ iterations. FW with momentum ($\beta = 0.8$) achieved $66.6\%$ ASR and $9.81$ mean iterations, indicating a significant improvement in convergence (see Figure \ref{fig:momentum}). This is seen to outperform all other variants with the same parameters, achieving appreciably better ASR and mean convergence time.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{plots/momentum.png}
-    \caption{Comparison of $g_t^\text{FW}$ of FW and momentum variant targeted attacks on ResNet-20 with $\epsilon = 0.007$ and $\beta = 0.8, N = 500$.}
+    \caption{Comparison of $g_t^\text{FW}$ of FW and momentum variant targeted attacks on ResNet-20 with $\epsilon = 0.005$ and $\beta = 0.8, N = 500$.}
     \label{fig:momentum}
 \end{figure}
 
 \subsection{Variants}
 
-% DUMMY VALUES NEED TO BE CHANGED
 \begin{table}[H]
     \centering
     \resizebox{\textwidth}{!}{
