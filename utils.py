@@ -59,7 +59,7 @@ class AdversarialLoss(nn.Module):
         self.num_classes = num_classes
         self.specific_label = specific_label
 
-    def forward(self, outputs, targets):
+    def forward1(self, outputs, targets):
         """
         Compute the adversarial loss.
         
@@ -103,7 +103,7 @@ class AdversarialLoss(nn.Module):
             loss = -average_incorrect_log_probs
             return loss.mean()
         
-    def forward1(self, outputs, targets):
+    def forward(self, outputs, targets):
         """
         Compute the adversarial loss.
         
@@ -214,7 +214,7 @@ class stepsize():
         d_tc = d_t.clone().detach()
         step_size = max_step
         best_stepsize = max_step
-        gamma = 0.5
+        beta = 0.5
         delta = 0.5
         initial_loss = self.ls_criterion(self.model(self.renorm(x_tc)), self.ls_target)#F.cross_entropy(self.model(x_k), target).item()
         min_loss = float('inf')
@@ -222,7 +222,7 @@ class stepsize():
         while step_size > 1e-4:
             new_point = self.renorm(x_tc + step_size * d_tc)
             new_loss = self.ls_criterion(self.model(new_point), self.ls_target)#F.cross_entropy(self.model(new_point), target).item()
-            RHS = initial_loss + gamma * step_size * torch.sum(self.x_t_grad * d_tc).item()
+            RHS = initial_loss + beta * step_size * torch.sum(self.x_t_grad * d_tc).item()
             if new_loss < min_loss:
                 min_loss = new_loss
                 best_stepsize = step_size
