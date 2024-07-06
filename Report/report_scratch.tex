@@ -264,8 +264,11 @@ We observe that the difficulty of the optimization problem, as influenced by the
     \label{fig:converge-compare}
 \end{figure}
 
-We observe that this application does not favor the use of PFW. Which we attribute to the lack of line-searching, which we found to be inappropriate for the non-convex application. Analysis of the away costs at each iteration showed that $g_t^\text{A}$ is often negative, indicating that it is still a good atom in the active set $S_t$. In the absence of line-searching, PFW with decaying rule frequently will over minimize, or even drop the contribution $v_t$ to $x_t$ harming convergence and attack success rate. We observe that the use of line-searching harms the  of PFW less so than the other two algorithms, making their performance more comparable. But still suffers form the aforementioned problems associated with non-convexity and line searching.
-
+\section{Conclusion}
+Our testing with Frank-Wolf has shown it very well suited for Adversarial attacks on DNNs. 
+We have demonstrated several factors that influence the difficulty of the optimization probelm, including choice between $L_1$ and $L_2$ constraints, choice of $\epsilon$.
+Varients most often produce nearly identical perturbations, This provides some indication as to the stability of the optimization probelm. We suspect that the lack of significant improvent through the use of AFW and PFW varients is, thus not attrbutable to the non-convex nature of the problem, but trather the 
+We observe that this application does not favor the use of PFW. 
 
 
 \section{Convergence Analysis}
@@ -286,6 +289,6 @@ At each iteration since $s_t \in \mathcal{M}$, we get that $||\nabla f(x_t) - s_
 \subsection{Pairwise Frank-Wolfe}
 \subsection{Away-Step Frank-Wolfe}
 
-\bibliographystyle{plain}  % Choose a bibliography style
+\bibliographystyle{plain}
 \bibliography{ref}
 \end{document}

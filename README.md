@@ -4,6 +4,15 @@
 ### Tanner Aaron Graves - 2073559
 ### Alessandro Pala - 2107800
 
+
+# USAGE
+Examples of attacks can be seem in test attacks.ipynb  
+There you may choose to attack one of three models: LeNet5, FMNIST classifier, or ResNet-20.  
+Additionally, many parameters may be experimented with, including: epsilon, Constraint norm, and Stepsize rule.
+
+Implementations of attacks can be seen in the test method implemented in utils.py and several helper methods in AttackStep.py.
+
+# Deliverables
 0. Analyze in depth the theory of the papers (FW.pdf, FW_variants.pdf, FW_survey.pdf)
 
 1. Develop the codes for the following algorithms:
