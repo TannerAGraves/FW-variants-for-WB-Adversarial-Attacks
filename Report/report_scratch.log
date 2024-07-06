@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  6 JUL 2024 19:31
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.7)  6 JUL 2024 19:33
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -178,14 +178,8 @@ Package: multirow 2021/03/15 v2.8 Span multiple rows of a table
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count294
 \l__pdf_internal_box=\box58
-) (./report_scratch.aux
-
-LaTeX Warning: Label `alg:cap' multiply defined.
-
-
-LaTeX Warning: Label `alg:cap' multiply defined.
-
 )
+No file report_scratch.aux.
 \openout1 = `report_scratch.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 15.
@@ -202,7 +196,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 15.
 LaTeX Font Info:    ... okay on input line 15.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 15.
 LaTeX Font Info:    ... okay on input line 15.
- (c:/texlive/2024/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+(c:/texlive/2024/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count295
 \scratchdimen=\dimen169
@@ -226,22 +220,74 @@ LaTeX Font Info:    Trying to load font information for U+rsfs on input line 17.
 File: ursfs.fd 1998/03/24 rsfs font definition file (jk)
 )
 
+c:/Users/JIC/Documents/UNIPD/Optimization/FW-variants-for-WB-Adversarial-Attacks/Report/report_scratch.tex:34: LaTeX Error: \mathcal allowed only in math mode.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.34 Of particular note is when $\mathcal
+                                         {M}$ is a polytope, as is the case ...
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+c:/Users/JIC/Documents/UNIPD/Optimization/FW-variants-for-WB-Adversarial-Attacks/Report/report_scratch.tex:34: Missing $ inserted.
+<inserted text> 
+                $
+l.34 ... is a polytope, as is the case when $p \in
+                                                   \{1, \infty\}$. This corr...
+I've inserted a begin-math/end-math symbol since I think
+you left one out. Proceed, with fingers crossed.
+
+
+
 [1
 
 {c:/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
 
 [2]
 
+LaTeX Warning: Citation `attacks' on page 3 undefined on input line 62.
+
+
+LaTeX Warning: Citation `fw-variants' on page 3 undefined on input line 62.
+
+
+
 [3]
 
 [4]
 
 [5]
+
+LaTeX Warning: Citation `lenet' on page 6 undefined on input line 149.
+
+
+LaTeX Warning: Citation `lenet-mdl' on page 6 undefined on input line 149.
+
+
+LaTeX Warning: Citation `fmnist' on page 6 undefined on input line 152.
+
+
+LaTeX Warning: Citation `fmnist-mdl' on page 6 undefined on input line 152.
+
+
+LaTeX Warning: Citation `resnet' on page 6 undefined on input line 153.
+
+
+LaTeX Warning: Citation `cifar10' on page 6 undefined on input line 153.
+
+
+LaTeX Warning: Reference `fig:adv_ex' on page 6 undefined on input line 153.
+
 <plots/adv_ex.png, id=32, 196.5744pt x 113.7048pt>
 File: plots/adv_ex.png Graphic file (type png)
 <use plots/adv_ex.png>
 Package pdftex.def Info: plots/adv_ex.png  used on input line 157.
 (pdftex.def)             Requested size: 345.0pt x 199.56932pt.
+
+LaTeX Warning: Reference `fig:eps' on page 6 undefined on input line 163.
+
 
 
 [6 <./plots/adv_ex.png>]
@@ -252,6 +298,10 @@ Package pdftex.def Info: plots/eps_choice.png  used on input line 170.
 (pdftex.def)             Requested size: 241.49895pt x 181.12799pt.
 
 
+LaTeX Warning: Reference `fig:converge-compare' on page 7 undefined on input line 175.
+
+
+
 [7 <./plots/eps_choice.png>]
 <plots/norm.png, id=46, 318.59026pt x 314.3745pt>
 File: plots/norm.png Graphic file (type png)
@@ -260,7 +310,14 @@ Package pdftex.def Info: plots/norm.png  used on input line 188.
 (pdftex.def)             Requested size: 207.0021pt x 204.26904pt.
 
 
+LaTeX Warning: Reference `fig:norm' on page 8 undefined on input line 194.
+
+
+
 [8 <./plots/norm.png>]
+
+LaTeX Warning: Reference `fig:momentum' on page 9 undefined on input line 224.
+
 <plots/momentum.png, id=52, 400.3758pt x 312.2064pt>
 File: plots/momentum.png Graphic file (type png)
 <use plots/momentum.png>
@@ -269,6 +326,12 @@ Package pdftex.def Info: plots/momentum.png  used on input line 228.
 
 
 [9]
+
+LaTeX Warning: Reference `table:varients' on page 10 undefined on input line 257.
+
+
+LaTeX Warning: Reference `fig:converge-compare' on page 10 undefined on input line 257.
+
 <plots/mdl_compare_avg_FWgap_by_iter.png, id=56, 556.0775pt x 433.62pt>
 File: plots/mdl_compare_avg_FWgap_by_iter.png Graphic file (type png)
 <use plots/mdl_compare_avg_FWgap_by_iter.png>
@@ -278,12 +341,14 @@ Package pdftex.def Info: plots/mdl_compare_avg_FWgap_by_iter.png  used on input 
 
 [10 <./plots/momentum.png>]
 
-[11 <./plots/mdl_compare_avg_FWgap_by_iter.png>] (./report_scratch.bbl
-Underfull \hbox (badness 10000) in paragraph at lines 4--7
-[]\OT1/cmr/m/n/10 Junaid Ali.  pytorch-fashionmnist-tutorial, n.d.
- []
+LaTeX Warning: Citation `fw-noncovex' on page 11 undefined on input line 278.
 
-)
+
+LaTeX Warning: Citation `attacks' on page 11 undefined on input line 278.
+
+
+
+[11 <./plots/mdl_compare_avg_FWgap_by_iter.png>] (./report_scratch.bbl)
 
 [12] (./report_scratch.aux)
  ***********
@@ -292,19 +357,22 @@ L3 programming layer <2024-05-27>
  ***********
 
 
-LaTeX Warning: There were multiply-defined labels.
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
 
  ) 
 Here is how much of TeX's memory you used:
- 3018 strings out of 473600
- 47028 string characters out of 5732738
+ 3004 strings out of 473600
+ 46795 string characters out of 5732738
  1942894 words of memory out of 5000000
- 25867 multiletter control sequences out of 15000+600000
+ 25855 multiletter control sequences out of 15000+600000
  565406 words of font info for 64 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 57i,11n,65p,1263b,324s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 57i,11n,65p,1255b,324s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb><c:/texlive/2024/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb>
-Output written on report_scratch.pdf (12 pages, 395629 bytes).
+Output written on report_scratch.pdf (12 pages, 391518 bytes).
 PDF statistics:
  138 PDF objects out of 1000 (max. 8388607)
  80 compressed objects within 1 object stream
