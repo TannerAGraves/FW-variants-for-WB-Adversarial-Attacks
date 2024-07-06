@@ -30,7 +30,7 @@ Adversarial attacks on CNNs are often stated as the following constrained optimi
 In the case of untargeted attacks on a classifier, we perturb an example with the aim it be incorrectly predicted as any other class. Here $f(x)$ is the loss function of the attacked model $-\ell(x, \hat{y})$. In the case of targeted attacks, we aim to maximize the likelihood of another class $y \neq \hat{y}$. The cost then is $f(x) = \ell(x, y)$. We have implemented both targeted and untargeted attacks, and come to focus on targeted attacks as the algorithms are seen to require more iterations to converge. 
 %constraint set
 The $L_p$ constraint $||x||_p \leq \epsilon$ directly restricts the size of perturbations made the to the example. An inherent problem of DNNs is that attacks can often be consistently successful even with very small, sometimes imperceptible $\epsilon$. Different choices of $p$ may be made, giving $||x||_p = (\sum_i{x_i^p})^{1/p}$. We have implemented and provided results for the $L_2$ and the $L_\infty(x) = \max_i |x_i|$ norms, focusing mostly on the latter. 
-We define the constraint set $\mathcal{M} = \{x : L_p(x) \leq \epsilon\}. 
+We define the constraint set $\mathcal{M} = \{x : L_p(x) \leq \epsilon\}$. 
 Of particular note is when $\mathcal{M}$ is a polytope, as is the case when $p \in \{1, \infty\}$. This corresponds to models making perturbations that are either sparse or have a maximal disturbance along each element. In these cases, the constraint set can be expressed as the convex combination of a finite set of vertices $\mathcal{M} = \text{Conv}\{\mathcal{A}\}$. This will be of particular relevance in the discussion of Away-step and pairwise variants. Otherwise, $\mathcal{A}$ is taken to be the boundary of $\mathcal{M}$.\break
 %Why is constraints an issue
 The constrained nature of this problem limits the applicability of a method like gradient descent, and requires integrating knowledge of the constraint space for effective optimization. Methods like Fast Signed Gradient attacks and projected gradient descent are popular choices, but either create unsophisticated adversarial examples or require wasteful projection onto the constraint space. 
@@ -254,7 +254,7 @@ Momentum proved highly effective at reducing the number of iterations required f
 \end{table}
 We note that $\epsilon$ values were chosen to create a difficult optimization problem that highlighted differences in convergence between algorithms, and $\epsilon$ could have been easily chosen to ensure $100\%$ ASR on all datasets.
 
-We observe that the difficulty of the optimization problem, as influenced by the choice of dataset to attack, $\epsilon$ choice, and performing either targeted or untargeted attacks will affect the number of Away Steps taken by AFW. Targeted attacks on CIFAR-10 as described in table \ref{table:varients}. For both attacks on LeNet5 and the FMNIST model, AFW was never seen to take an away step. However, when attacking ResNet-20, it is seen to have taken Away Steps $17.1\%$ of the time. As it mostly takes FW steps, the convergence of AFW is seen to closely follow that of normal FW (see Figure \ref{fig:converge-compare}).
+We observe that the difficulty of the optimization problem, as influenced by the choice of dataset to attack, $\epsilon$ choice, and performing either targeted or untargeted attacks will affect the number of Away Steps taken by AFW. Targeted attacks on CIFAR-10 as described in table \ref{table:varients}. For both attacks on LeNet5 and the FMNIST model, AFW was never seen to take an away step. However, when attacking ResNet-20, it is seen to have taken Away Steps $17.1\%$ of the time. As it mostly takes FW steps, the convergence of AFW is seen to closely follow that of normal FW (see Figure \ref{fig:converge-compare}).	
 
 %REPLACE WITH FINAL RESULTS
 \begin{figure}[H]
@@ -264,30 +264,27 @@ We observe that the difficulty of the optimization problem, as influenced by the
     \label{fig:converge-compare}
 \end{figure}
 
+\section{Convergence Comments}
+We do not provide a proof of the convergence of FW in non-convex applications, instead provide a discussion
+ following the work of Lacoste-Julien 2016 \cite{fw-noncovex} and \cite{attacks}. 
+The convergence of the FW algorithms in this application is complicated by the non-convexity of the DNN objective function. The sub-linear rate of the momentum variant has an elegant proof from Chen et. al. \cite{attacks} which uses the Lipschitz continuity of the function to bound the deviation of the momentum therm $m_t$ and the gradient, this is then used to bound the sub optimally. 
+The assumption $f$ has $L$-Lipschitz continuous gradient on $\mathcal{M}$ is to say that 
+$$ f(y) \leq f(x) + \nabla f(x)^T (y-x) + \frac{L}{2}||y-x||_2^2$$. Which, though not universally true for CNN, can often be a well founded assumption \cite{attacks}. 
+Lipshitz continuous gradient gives us bound on curvature constant $C_f \leq L \text{ diam}(\mathcal{M}$ % (eq5) https://arxiv.org/pdf/1607.00345
+We have the additional requirement that our constraint space $\mathcal{M}$ is convex and compact with diameter $D$. Satisfying $||x-y||_2 \leq D$ for $x,y \in \mathcal{M}$. This is trivially satisfied in the application of adversarial attacks, considering the definition of $\mathcal{M}$. With these assumptions it is sufficient to arrive at the result:
+$$g_t^\text{FW} \leq \frac{K}{\sqrt{t+1}} \quad \text{for }t\geq 0$$
+Or FW achieves $O(1/\sqrt{t})$ in this context for a constant $K$. 
+
+Proofs for improved convergence of AFW and PFW variants are, to our knowledge, dependent on Strong Convexity assumptions of objective. Though this alone leaves the potential to observe practical benefits of these variants in non-convex applications, despite our findings in this context.
+
 \section{Conclusion}
-Our testing with Frank-Wolf has shown it very well suited for Adversarial attacks on DNNs. 
-We have demonstrated several factors that influence the difficulty of the optimization probelm, including choice between $L_1$ and $L_2$ constraints, choice of $\epsilon$.
-Varients most often produce nearly identical perturbations, This provides some indication as to the stability of the optimization probelm. We suspect that the lack of significant improvent through the use of AFW and PFW varients is, thus not attrbutable to the non-convex nature of the problem, but trather the 
-We observe that this application does not favor the use of PFW. 
+Our testing with Frank-Wolf has shown it very well suited for Adversarial attacks on DNNs. Their ability to efficiently use the construction of the constraint set $\mathcal{M}$ to maintain feasibility, makes it ideal for this application.
+We have demonstrated several factors that influence the difficulty of the optimization problem, including choice of model,   between $L_1$ and $L_2$ constraints, choice of $\epsilon$. Furthermore, FW benefits, from the application of Line-searching step-size rules, with exact rules providing the best ASR and convergence, and Amijo rule significantly reducing the CPU time required for attacks by limiting queries to the model. 
+Variants most often produce nearly identical perturbations, demonstrating that stability of the optimization process. 
+AFW has shown to give results generally comparable to normal FW. Analysis of away cost find it most often the case that when away steps are taken (typically $17\%$ of the time for ResNet-20), the away cost is typically not significantly better than the FW cost. 
+We observe that this application does not favor the use of PFW. We attribute this to the variant requiring influence on $x_t$ be transferred between atoms at each iteration. We observe it is often the case that $v_t$ is still a good atom, and directly transferring influence between two atoms is not as productive in this application as transferring it to all other atoms as seen in FW and AFW. 
+Momentum is seen to be by far to be the most effective variant. We have no conclusive illustration of this, we suspect this to be a consequence of the potential for atoms in $S_t$ to contain redundant information due to the nature of $L_2$ and $L_\infty$ norms used in the context of image data. Momentum can integrate the overlapping information in consecutive gradients, accelerating convergence. We suspect this to be a larger obstacle to convergence then the problem of oscillations PFW and AFW aim to address.
 
-
-\section{Convergence Analysis}
-% Proof adaptaed from https://arxiv.org/pdf/1607.00345
-% Convergence Rate of Frank-Wolfe for Non-Convex Objectives (Lacoste-Julien 2016)
-The convergence of the FW algorithms in this application is complicated by the non-convexity of the DNN objective function.
-We reproduce a proof from Lacoste-Julien \cite{fw-noncovex} for the sub-linear convergence of FW in the non-convex case. The sublinear rate of the momentum variant has an elegant proof from Chen et. al. \cite{attacks}. We comment on the intuition behind the two variants (AFW and PFW) achieving linear rates in the convex case.
-For the following proof we assume that $f$ has $L$-Lipschitz continuous gradient on $\mathcal{M}$. This is to say that 
-$$ f(y) \leq f(x) + \nabla f(x)^T (y-x) + \frac{L}{2}||y-x||_2^2$$.
-This has been shown to be a reasonable assumption for DNN. %Santurkar et al. 2018, mentioned in attacks.pdf
-Lipshitz continuous gradient gives us bound on curvature constant $C_f$ % (eq5) https://arxiv.org/pdf/1607.00345
-Where $C_f$ is the smallest constant such that 
-We additionally require that our constraint space $\mathcal{M}$ is convex and compact with diameter $D$. Satisfying $||x-y||_2 \leq D$ for $x,y \in \mathcal{M}$. This is trivially satisfied in the application of adversarial attacks, considering the definition of $\mathcal{M}$. 
-Where Chen et al. 2020 used this strategy to prove the convergence of FW with momentum. We the result holds for normal FW. 
-At each iteration since $s_t \in \mathcal{M}$, we get that $||\nabla f(x_t) - s_t||_2$
-
-\subsection{Frank-Wolfe}
-\subsection{Pairwise Frank-Wolfe}
-\subsection{Away-Step Frank-Wolfe}
 
 \bibliographystyle{plain}
 \bibliography{ref}

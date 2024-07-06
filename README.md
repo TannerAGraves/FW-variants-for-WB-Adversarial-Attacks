@@ -6,7 +6,7 @@
 
 
 # USAGE
-Examples of attacks can be seem in test attacks.ipynb  
+Examples of attacks can be seem in 'test attacks.ipynb'  
 There you may choose to attack one of three models: LeNet5, FMNIST classifier, or ResNet-20.  
 Additionally, many parameters may be experimented with, including: epsilon, Constraint norm, and Stepsize rule.
 
