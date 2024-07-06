@@ -16,7 +16,7 @@
 
 \maketitle 
 \section{Abstract}
-With deep neural networks becoming ubiquitous in application, adversarial attacks have received much attention, as it has proved remarkably easy to create adversarial examples- genuine data that undergoes a minimal and unobtrusive corruption process in order to maximally harm the performance of a model. Access to a models architecture can enable white-box attacks, where gradients of loss with respect to input examples are exploited to create adversarial examples. The requirement that examples be minimally perturbed is a constraint on the optimization. The ability of Frank-wolf and variants have gathered much attention for their ability to be efficiently create adversarial examples while staying in a constraint set. In the paper we introduce discuss the application of Frank-Wolfe and two variants to this non-convex constrained optimization problem. Furthermore we discuss popular optimizations and their effect convergence and attack efficacy, comparing performance on attacks on models trained on MNSIT, FashionMNIST, and CFAIR-10 datasets. Finally, there is a discussion of the theoretical underpinnings of each algorithm. 
+With deep neural networks becoming ubiquitous in application, adversarial attacks have received much attention, as it has proved remarkably easy to create adversarial examples- genuine data that undergoes a minimal and unobtrusive corruption process in order to maximally harm the performance of a model. Access to a models architecture can enable white-box attacks, where gradients of loss with respect to input examples are exploited to create adversarial examples. The requirement that examples be minimally perturbed is a constraint on the optimization. The ability of Frank-wolf and variants have gathered much attention for their ability to be efficiently create adversarial examples while staying in a constraint set. In this paper, we discuss the application of Frank-Wolfe and two variants to this non-convex constrained optimization problem. Furthermore we discuss popular optimizations and their effect convergence and attack efficacy, comparing performance on attacks on models trained on MNSIT, FashionMNIST, and CFAIR-10 datasets. Finally, there is a discussion of the theoretical underpinnings of each algorithm. 
 
 \section{Introduction}
 Adversarial attacks on CNNs are often stated as the following constrained optimization problem:
@@ -29,8 +29,8 @@ Adversarial attacks on CNNs are often stated as the following constrained optimi
 % targeted / untargeted
 In the case of untargeted attacks on a classifier, we perturb an example with the aim it be incorrectly predicted as any other class. Here $f(x)$ is the loss function of the attacked model $-\ell(x, \hat{y})$. In the case of targeted attacks, we aim to maximize the likelihood of another class $y \neq \hat{y}$. The cost then is $f(x) = \ell(x, y)$. We have implemented both targeted and untargeted attacks, and come to focus on targeted attacks as the algorithms are seen to require more iterations to converge. 
 %constraint set
-The $L_p$ constraint $||x||_p \leq \epsilon$ directly restricts the size of perturbations made the to the example. An inherent problem of DNNs is often attacks can be consistently successful even with very small, even imperceptible $\epsilon$. Different choices of $p$ may be made giving $||x||_p = (\sum_i{x_i^p})^{1/p}$. We have implemented and provide results for the $L_2$ and the $L_\infty(x) = \max_i |x_i|$ norms, focusing mostly on the ladder. 
-We define the constraint set $\mathcal{M} = \{x : L_p(x) \leq \epsilon\}$. 
+The $L_p$ constraint $||x||_p \leq \epsilon$ directly restricts the size of perturbations made the to the example. An inherent problem of DNNs is that attacks can often be consistently successful even with very small, sometimes imperceptible $\epsilon$. Different choices of $p$ may be made, giving $||x||_p = (\sum_i{x_i^p})^{1/p}$. We have implemented and provided results for the $L_2$ and the $L_\infty(x) = \max_i |x_i|$ norms, focusing mostly on the latter. 
+We define the constraint set $\mathcal{M} = \{x : L_p(x) \leq \epsilon\}. 
 Of particular note is when $\mathcal{M}$ is a polytope, as is the case when $p \in \{1, \infty\}$. This corresponds to models making perturbations that are either sparse or have a maximal disturbance along each element. In these cases, the constraint set can be expressed as the convex combination of a finite set of vertices $\mathcal{M} = \text{Conv}\{\mathcal{A}\}$. This will be of particular relevance in the discussion of Away-step and pairwise variants. Otherwise, $\mathcal{A}$ is taken to be the boundary of $\mathcal{M}$.\break
 %Why is constraints an issue
 The constrained nature of this problem limits the applicability of a method like gradient descent, and requires integrating knowledge of the constraint space for effective optimization. Methods like Fast Signed Gradient attacks and projected gradient descent are popular choices, but either create unsophisticated adversarial examples or require wasteful projection onto the constraint space. 
@@ -47,19 +47,19 @@ $$LMO_\mathcal{A} = s_t = -\epsilon \, \text{sign}(\nabla f(x_t)) + x_0$$
 %But can be given generally for any choice of $p \in [1, \infty]$.
 %$$LMO_\mathcal{A}_i = -\epsilon \text{sign}(\nabla f(x_t))$$
 %LMO complexity - FW.pdf
-This is clearly of $O(n)$ complexity where $n$ is the number of elements in the gradient. This can be interpreted as defining an attack direction where each element is the maximum allowable perturbation $\pm \epsilon$ according to the gradient. With one iteration, this is exactly the outcome of a Fast Signed Gradient Attack. At each iteration, we can see that the LMO will give a vertex on the boundary of the constraint set $\mathcal{M}$ which was optimally chosen to be as close to the true gradient as possible while permitting subsequent iterations stay within the feasible set.
+This is clearly of $O(n)$ complexity, where $n$ is the number of elements in the gradient. This can be interpreted as defining an attack direction where each element is the maximum allowable perturbation $\pm \epsilon$ according to the gradient. With one iteration, this is exactly the outcome of a Fast Signed Gradient Attack. At each iteration, we can see that the LMO will give a vertex on the boundary of the constraint set $\mathcal{M}$ which was optimally chosen to be as close to the true gradient as possible while permitting subsequent iterations stay within the feasible set.
 
 
 % FW GAP as Convergence Criterion
 The constrained nature of the Adversarial Attack problem means that the norm of the gradient $||\nabla_x f(x)||$ is not a suitable convergence criterion, as boundary points need not have zero gradient. Instead, we adopt the Frank-Wolfe gap as a measure of both optimality and point feasibility. In the convex case, this gap measures the maximum improvement over the current iteration $x_t$ within the constraints $\mathcal{M}$ and is defined as:
 $$g_t^{\text{FW}} := \max_{s \in \mathcal{M}} \langle x_t - s, \nabla f(x_t) \rangle = \langle -\nabla f(x_t), d_t^{\text{FW}} \rangle$$
-The Frank-Wolfe gap $g_t^{\text{FW}}$ is always non-negative $g_t^{\text{FW}} \geq 0$ and is zero if and only if $x_t$ is a stationary point. This makes it a useful convergence criterion, particularly since stationary points need not have zero gradients in constrained problems. We found that $g_t^\text{FW} < 0.1$ to be a good convergence criterion for our models. In most circumstances, seccessful attacks will happen before this threashold. However, setting it higher seems to adversly effect attack success rate, and setting it lower is seen to require many more unneeded iterations. We cap the maximum iterations at $20$ in this work.
+The Frank-Wolfe gap $g_t^{\text{FW}}$ is always non-negative $g_t^{\text{FW}} \geq 0$ and is zero if and only if $x_t$ is a stationary point. This makes it a useful convergence criterion, particularly since stationary points need not have zero gradients in constrained problems. We found that $g_t^\text{FW} < 0.1$ to be a good convergence criterion for our models. In most circumstances, successful attacks will happen before this threshold. However, setting it higher seems to adversely affect attack success rate, and setting it lower is seen to require many more unneeded iterations. We cap the maximum iterations at $20$ in this work.
 
 The loss functions of Deep Neural Networks (DNNs), which are commonly the subject of adversarial attacks, are highly non-convex. Thus, the convergence of Frank-Wolfe methods in these applications is complicated by the fact that we are not guaranteed to find a global optimum or a successful attack, but rather convergence to a stationary point. 
 It is also worth noting that, in the context of adversarial attacks, the Frank-Wolfe gap serves as an imprecise surrogate for success. In many cases, Frank-Wolfe methods generate successful attacks several iterations before convergence. This is because achieving an incorrect class probability higher than the correct class is often sufficient for a successful attack, whereas convergence indicates the new output class probability has been maximized.
 
 \section{Algorithms}
-We implement the original FW algorithm and amodified version with momentum FW with momentum \cite{attacks}. We then compare the performance of these models with 2 variants \cite{fw-variants}: Away Step Frank Wolfe, and Pairwise Frank Wolfe by measuring attack success rate and average iterations required for convergence.
+We implement the original FW algorithm and a modified version with momentum FW with momentum \cite{attacks}. We then compare the performance of these models with 2 variants \cite{fw-variants}: Away Step Frank Wolfe, and Pairwise Frank Wolfe by measuring attack success rate and average iterations required for convergence.
 
 \subsection{Frank-Wolfe}
 \begin{algorithm}
@@ -85,8 +85,8 @@ Observing oscillation in Frank Wolfe convergence is common and consequence of op
 %citation needed
  We implement variants that aim to address this problem to provide better convergence. The simplest of which is adding momentum to standard frank wolf which replaces the gradient in the LMO calculation in line $(4)$ with a momentum term $m_t  = \beta m_{t-1} + (1-\beta) \nabla f(x_t)$ and initialize $m_0 = \nabla f(x_0)$. By considering this exponentially weighted average of gradient information, momentum variants are empirically observed to have nicer convergence. 
 
-The FW algorithm has a useful interpretation that serves as basis for the following variants: Away-Step FW and Pairwise FW. Namely that at each iteration $x_t$ is perturbed in some direction $s_t$, making $x_{t+1}$ a convex combination of $x_t$ and $s_t$. We record these directions in an active set $S_{t+1} = S_t \bigcup \{s_t\}$ and observe that initially $x_0$ is a convex combination of of active set $S_0 = \{x_0\}$. Then by induction, $x_t$ is a convex combination of directions in $S_t$, admitting coefficients $\alpha$ such that $x_t = \sum_{s \in S_t} \alpha_{s} s$.
-Each iteration of the FW algorithm is seen to increase or introduce the contribution of $s_t$ in the convex combination while shrink the $\alpha$ coefficients of all other vertices, or atoms uniformly.
+The FW algorithm has a useful interpretation that serves as the basis for the following variants: Away-Step FW and Pairwise FW. Namely that at each iteration $x_t$ is perturbed in some direction $s_t$, making $x_{t+1}$ a convex combination of $x_t$ and $s_t$. We record these directions in an active set $S_{t+1} = S_t \bigcup \{s_t\}$ and observe that initially $x_0$ is a convex combination of of active set $S_0 = \{x_0\}$. Then by induction, $x_t$ is a convex combination of directions in $S_t$, admitting coefficients $\alpha$ such that $x_t = \sum_{s \in S_t} \alpha_{s} s$.
+Each iteration of the FW algorithm is seen to increase or introduce the contribution of $s_t$ in the convex combination while shrinking the $\alpha$ coefficients of all other vertices, or atoms, uniformly.
 The innovation of the Away-Step and Pairwise variant is to recognize contribution of "bad atoms" can prevent convergence to an optimum on the boundary. These variants more directly diminish such atoms contributions by either taking steps away from selected atoms, or transferring mass between two selected atoms at each iteration as the case with the pairwise variant.
 
 \subsection{Away-Step Frank-Wolfe}
@@ -143,13 +143,13 @@ Pairwise Frank-Wolfe (PFW) is similar to AFW in that it computes the same away s
 \end{algorithmic}
 \end{algorithm}
 
-The behavior of the of PFW can be understood to be transferring mass in the convex combination from the worst atom to the active set to the atom corresponding the the FW direction. At each iteration the $\alpha$ coefficients are updated as follows: $\alpha_{v_{t+1}} = \alpha_{v_t} - \gamma_t$, $\alpha_{s_{t+1}} = \alpha_{s_t} + \gamma_t$ and all other $\alpha$ values are unchanged. To maintain $x_t$ \emph{convex} combination of atoms in active set, and consequently not affine or infeasible, its required $\gamma_t \leq \gamma_\text{max} := \alpha_{v_t}$. By directly minimizing, and potentially dropping bad atoms from the active set, the oscillation observed with FW is mitigated. In the convex case this has been shown to give the PFW variant a linear convergence rate.
+The behavior of the of PFW can be understood to be transferring mass in the convex combination from the worst atom to the active set to the atom corresponding the the FW direction. At each iteration the $\alpha$ coefficients are updated as follows: $\alpha_{v_{t+1}} = \alpha_{v_t} - \gamma_t$, $\alpha_{s_{t+1}} = \alpha_{s_t} + \gamma_t$ and all other $\alpha$ values are unchanged. To maintain $x_t$ \emph{convex} combination of atoms in active set, and consequently not affine or infeasible, its required $\gamma_t \leq \gamma_\text{max} := \alpha_{v_t}$. By directly minimizing and potentially dropping bad atoms from the active set, the oscillation observed with FW is mitigated. In the convex case this has been shown to give the PFW variant a linear convergence rate.
 
 \section{Results}
-Algorithms were tested on three pre-trained models, each performing a classification task on a different dataset. An implementation of LeNet5 \cite{lenet, lenet-mdl} is a CNN with 62,706 parameters trained on the MNIST dataset to classify handwritten didgets. 
+Algorithms were tested on three pre-trained models, each performing a classification task on a different dataset. An implementation of LeNet5 \cite{lenet, lenet-mdl} is a CNN with 62,706 parameters trained on the MNIST dataset to classify handwritten digits. 
 % https://blog.paperspace.com/writing-lenet5-from-scratch-in-python/
 % http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf?ref=blog.paperspace.com
-Secondly we found a medium sized CNN pre-trined for the Fashion-MNIST dataset \cite{fmnist, fmnist-mdl}. Designed to be a more difficult problem than MNIST, the model classifies images as one of T-shirt/top, Trouser, Pullover, Dress, Coat, Sandal, Shirt, Sneaker, Bag, Ankle boot. 
+Secondly we found a medium sized CNN pre-trained for the Fashion-MNIST dataset \cite{fmnist, fmnist-mdl}. Designed to be a more difficult problem than MNIST, the model classifies images as one of T-shirt/top, Trouser, Pullover, Dress, Coat, Sandal, Shirt, Sneaker, Bag, Ankle boot. 
 Finally, ResNet-20 \cite{resnet} is a comparatively large CNN with 20 layers. We use a pre-trained implementation adapted for the CIFAR-10 dataset \cite{cifar10} which classifies 3x32x32 color examples into one of 10 categories: Airplane, Automobile, Bird, Cat, Deer, Dog, Frog, Horse, Ship, and Truck. All three proved susceptible to Adversarial attacks created by FW methods to varying degrees. Representative successful attacks are shown in figure \ref{fig:adv_ex}.
 
 \begin{figure}[H]
@@ -159,7 +159,7 @@ Finally, ResNet-20 \cite{resnet} is a comparatively large CNN with 20 layers. We
     \label{fig:adv_ex}
 \end{figure}
 
-We observed that the larger and more complicated a model, the more susceptible it is to adversarial attack. 
+We observed that the larger and more complicated a model is, the more susceptible it is to adversarial attack. 
 LeNet5 being a notably small and simple model by contemporary standards, showed remarkable robustness and required attacks well within perceptible levels ($\epsilon \approx 0.3$) before the tested FW methods could reliably produce adversarial examples. While ResNet and FMNIST model can be reliably attacked with $\epsilon$ above $0.07$ and $0.05$ respectively (see Figure \ref{fig:eps}).
 
 \subsection{$\epsilon$ Choice}
@@ -199,10 +199,10 @@ The methods for step-size were implemented as follows:
 %Lipschitz constant-based (fixed) step-size, where the step-size is determined using the Lipschitz constant \(L\) with \(\gamma_t = \frac{1}{L}\); 
  Decaying step-size, where the step-size decreases over time according to $\gamma_t = \frac{2}{t + 2}$; 
 exact line-searching, which solves the optimization problem $\text{argmin}_{\gamma} f(x + \gamma d_t)$ where $\gamma \in (0,\gamma_t^\text{max}]$; 
-and Armijo-rule search, which defines stepsizes for each iteration $k$: $\gamma_t = \delta^k \gamma_t^\text{max}$ and tests for satisfactory decrease  in the objective relative to the step-size as captured by the the Armijo condition $f(x + \gamma_t d_t) \leq f(x) + \beta \gamma_t \langle\nabla f(x), d_t\langle$, where $\delta \in (0,1)$ and $\beta \in (0, 0.5)$ are fixed parameters that controll the step-size decrease at each iteration, and the desired improvement respectively. This method is well suited to this application, as it aims to provide the convergence benifits provided by adaptive step-sizes while drastically reducing queries to the loss function which is expensive in the context of adversarial attacks.
+and Armijo-rule search, which defines stepsizes for each iteration $k$: $\gamma_t = \delta^k \gamma_t^\text{max}$ and tests for satisfactory decrease  in the objective relative to the step-size as captured by the the Armijo condition $f(x + \gamma_t d_t) \leq f(x) + \beta \gamma_t \langle\nabla f(x), d_t\langle$, where $\delta \in (0,1)$ and $\beta \in (0, 0.5)$ are fixed parameters that control the step-size decrease at each iteration, and the desired improvement respectively. This method is well suited to this application, as it aims to provide the convergence benefits provided by adaptive step-sizes while drastically reducing queries to the loss function which is expensive in the context of adversarial attacks.
 
-We found the application of line-searching techniques to be marginally benifit attack success rate, and appreciably decrease iterations required to converge. 
-On a consumer grade machine and without parallizing model queries, we show the results of the three different algorithims. Where exact-LS tests 50 equally spaced stepsizes $\gamma_t \in (0, \gamma_t^\text{max}]$, and Armijo rule used parameters we found to perform well through experimentation: $\gamma = 0.5, \beta = 0.5$.
+We found the application of line-searching techniques to marginally benefit attack success rate and appreciably decrease iterations required to converge. 
+On a consumer grade machine and without paralleling model queries, we show the results of the three different algorithms. Where exact-LS tests 50 equally spaced stepsizes $\gamma_t \in (0, \gamma_t^\text{max}]$, and Armijo rule used parameters we found to perform well through experimentation: $\gamma = 0.5, \beta = 0.5$.
 
 \begin{table}[H]
 \centering
@@ -221,12 +221,12 @@ Exact-LS & 63.8 & 12.98 & 0.34 \\
 
 \subsection{Momentum}
 
-Momentum proved highly effective at reducing the number of iterations required for convergence with minimal effect attack success rate. On a test of $500$ examples from CIFAR-10. Normal FW provided an ASR of $65.4\%$ with average of $12.78$ iterations. FW with momentum ($\beta = 0.8$) achieved $66.6\%$ ASR and $9.81$ mean iterations, indicating a significant improvement in convergence (see Figure \ref{fig:momentum}). This is seen to outperform all other varients with the same parameters, achieving appreciably better ASR and substantially better mean convergence time.
+Momentum proved highly effective at reducing the number of iterations required for convergence with minimal effect attack success rate. On a test of $500$ examples from CIFAR-10. Normal FW provided an ASR of $65.4\%$ with average of $12.78$ iterations. FW with momentum ($\beta = 0.8$) achieved $66.6\%$ ASR and $9.81$ mean iterations, indicating a significant improvement in convergence (see Figure \ref{fig:momentum}). This is seen to outperform all other variants with the same parameters, achieving appreciably better ASR and mean convergence time.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{plots/momentum.png}
-    \caption{Comparison of $g_t^\text{FW}$ of FW and momentum varient targeted attacks on ResNet-20 with $\epsilon = 0.007$ and $\beta = 0.8, N = 500$.}
+    \caption{Comparison of $g_t^\text{FW}$ of FW and momentum variant targeted attacks on ResNet-20 with $\epsilon = 0.007$ and $\beta = 0.8, N = 500$.}
     \label{fig:momentum}
 \end{figure}
 
@@ -254,7 +254,7 @@ Momentum proved highly effective at reducing the number of iterations required f
 \end{table}
 We note that $\epsilon$ values were chosen to create a difficult optimization problem that highlighted differences in convergence between algorithms, and $\epsilon$ could have been easily chosen to ensure $100\%$ ASR on all datasets.
 
-We observe that the difficulty of the optimization problem, as influenced by the choice of dataset to attack, $\epsilon$ choice, and performing either targeted or untargeted attacks will effect the number of Away Steps taken by AFW. Targeted attacks on CIFAR-10 as described in table \ref{table:varients}. For Both attacks on LeNet5 and FMNIST model, AFW was never seen to take an away step. However, when attacking ResNet-20, it is seen to have taken Away Steps $17.1\%$ of the time. As it takes majority FW steps, the convergence of AFW is seen to closely follow that of normal FW (see Figure \ref{fig:converge-compare}).
+We observe that the difficulty of the optimization problem, as influenced by the choice of dataset to attack, $\epsilon$ choice, and performing either targeted or untargeted attacks will affect the number of Away Steps taken by AFW. Targeted attacks on CIFAR-10 as described in table \ref{table:varients}. For both attacks on LeNet5 and the FMNIST model, AFW was never seen to take an away step. However, when attacking ResNet-20, it is seen to have taken Away Steps $17.1\%$ of the time. As it mostly takes FW steps, the convergence of AFW is seen to closely follow that of normal FW (see Figure \ref{fig:converge-compare}).
 
 %REPLACE WITH FINAL RESULTS
 \begin{figure}[H]
@@ -275,7 +275,7 @@ We observe that this application does not favor the use of PFW.
 % Proof adaptaed from https://arxiv.org/pdf/1607.00345
 % Convergence Rate of Frank-Wolfe for Non-Convex Objectives (Lacoste-Julien 2016)
 The convergence of the FW algorithms in this application is complicated by the non-convexity of the DNN objective function.
-We reproduce a proof from Lacoste-Julien \cite{fw-noncovex} for the sub-linear convergance of FW in the non-convex case. The sublinear rate of the momentum varient has an elegant proof from Chen et. al. \cite{attacks}. We comment on the intuition behind the two varients (AFW and PFW) acheiving linear rates in the convex case.
+We reproduce a proof from Lacoste-Julien \cite{fw-noncovex} for the sub-linear convergence of FW in the non-convex case. The sublinear rate of the momentum variant has an elegant proof from Chen et. al. \cite{attacks}. We comment on the intuition behind the two variants (AFW and PFW) achieving linear rates in the convex case.
 For the following proof we assume that $f$ has $L$-Lipschitz continuous gradient on $\mathcal{M}$. This is to say that 
 $$ f(y) \leq f(x) + \nabla f(x)^T (y-x) + \frac{L}{2}||y-x||_2^2$$.
 This has been shown to be a reasonable assumption for DNN. %Santurkar et al. 2018, mentioned in attacks.pdf
