@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 
-# Define relevant variables for the ML task
 class LeNet():
     def __init__(self, weigths_pth = "models/lenet5_model.pth"):
         self.batch_size = 64

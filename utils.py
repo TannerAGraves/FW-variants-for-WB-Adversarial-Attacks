@@ -59,7 +59,7 @@ class AdversarialLoss(nn.Module):
         self.num_classes = num_classes
         self.specific_label = specific_label
 
-    def forward1(self, outputs, targets):
+    def forward(self, outputs, targets):
         """
         Compute the adversarial loss.
         
@@ -103,7 +103,7 @@ class AdversarialLoss(nn.Module):
             loss = -average_incorrect_log_probs
             return loss.mean()
         
-    def forward(self, outputs, targets):
+    def forward1(self, outputs, targets):
         """
         Compute the adversarial loss.
         
@@ -440,8 +440,8 @@ def test(target_model, device, epsilon,num_fw_iter, num_test = 1000, method='fw'
     # Return the accuracy and an adversarial example
     return final_acc, adv_examples, pd.DataFrame(hist)
 
-def plot_convergence(hist_dfs, algs):
-    final_hist_dfs = [hist.groupby('example_idx').tail(1) for hist in hist_dfs]
+def plot_convergence(hist_dfs, algs, y_axis = 'gap_FW'):
+    final_hist_dfs = [hist.groupby('example_idx').tail(1) for hist in hist_dfs] 
     for i, final_hist in enumerate(final_hist_dfs):
         targeted = 'targeted_success' in final_hist.columns
         ASR_text = 'Targeted Attack Success Rate' if targeted else 'Attack Success Rate'
@@ -455,7 +455,7 @@ def plot_convergence(hist_dfs, algs):
                 print(f"\tStep Types: FW {st['FW']}, AS {st['AS']}. {100 * st['AS'] / (st['FW'] + st['AS']):.1f}% Away Steps.")
             else:
                 print("\t100% FW steps")
-        plt.plot(hist_dfs[i].groupby('FW_iter')['gap_FW'].mean(), label=algs[i])
+        plt.plot(hist_dfs[i].groupby('FW_iter')[y_axis].mean(), label=algs[i])
     plt.xlabel("Iteration t")
     plt.ylabel("Average FW gap")
     plt.legend()
