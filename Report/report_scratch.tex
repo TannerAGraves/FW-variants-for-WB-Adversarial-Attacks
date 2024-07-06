@@ -221,12 +221,12 @@ Exact-LS & 63.8 & 12.98 & 0.34 \\
 
 \subsection{Momentum}
 
-Momentum proved highly effective at reducing the number of iterations required for convergence with minimal effect attack success rate. On a test of $1000$ examples from CIFAR-10. Normal FW provided an ASR of $88.7\%$ with average of $11.39$ iterations. FW with momentum ($\beta = 0.8$) achieved $89.5\%$ ASR and $8.47$ mean iterations, indicating a significant improvement in convergence (see Figure \ref{fig:momentum}). This is seen to outperform all other varients with the same parameters, achieving appreciably better ASR and mean convergence time.
+Momentum proved highly effective at reducing the number of iterations required for convergence with minimal effect attack success rate. On a test of $500$ examples from CIFAR-10. Normal FW provided an ASR of $65.4\%$ with average of $12.78$ iterations. FW with momentum ($\beta = 0.8$) achieved $66.6\%$ ASR and $9.81$ mean iterations, indicating a significant improvement in convergence (see Figure \ref{fig:momentum}). This is seen to outperform all other varients with the same parameters, achieving appreciably better ASR and substantially better mean convergence time.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{plots/momentum.png}
-    \caption{Comparison of $g_t^\text{FW}$ of FW and momentum varient targeted attacks on ResNet-20 with $\epsilon = 0.007$ and $\beta = 0.8, N = 1000$.}
+    \caption{Comparison of $g_t^\text{FW}$ of FW and momentum varient targeted attacks on ResNet-20 with $\epsilon = 0.007$ and $\beta = 0.8, N = 500$.}
     \label{fig:momentum}
 \end{figure}
 
@@ -243,13 +243,13 @@ Momentum proved highly effective at reducing the number of iterations required f
         \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
         & \textbf{ASR (\%)} & \textbf{Avg Iter} & \textbf{ASR (\%)} & \textbf{Avg Iter} & \textbf{ASR (\%)} & \textbf{Avg Iter} \\
         \midrule
-        FW & 62.2 & 50 & 67.6 & 16.35 & 66.0 & 12.71 \\
-        AFW & 62.2 & 45 & 67.8 & 16.35 & 65.0 & 12.8 \\
-        PFW & 62.2 & 47 & 62.2 & 17.03 & 64.0 & 13.48 \\
+        FW & 62.2 & 16.27 & 67.6 & 16.35 & 66.0 & 12.71 \\
+        AFW & 62.2 & 16.27 & 67.8 & 16.35 & 65.0 & 12.8 \\
+        PFW & 56.2 & 16.78 & 62.2 & 17.03 & 64.0 & 13.48 \\
         \bottomrule
     \end{tabular}
     }
-    \caption{Attack Success Rate (ASR) and Average Iterations of Frank-Wolfe Algorithm and Variants for Targeted Adversarial Attacks on 1000 Examples from Three Datasets with $20$ maximum iterations and decaying step-size rule.}
+    \caption{Attack Success Rate (ASR) and Average Iterations of Frank-Wolfe Algorithm and Variants for Targeted Adversarial Attacks on 500 Examples from Three Datasets with $20$ maximum iterations and decaying step-size rule.}
 	\label{table:varients}
 \end{table}
 We note that $\epsilon$ values were chosen to create a difficult optimization problem that highlighted differences in convergence between algorithms, and $\epsilon$ could have been easily chosen to ensure $100\%$ ASR on all datasets.
