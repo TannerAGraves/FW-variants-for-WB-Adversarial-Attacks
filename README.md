@@ -1,5 +1,6 @@
 # FW-variants-for-WB-Adversarial-Attacks
-
+Final Project for Optimization for Datascience - UNIPD Datascience Masters Program    
+Grade: 30 with honors / 30
 ## GROUP 3
 ### Tanner Aaron Graves - 2073559
 ### Alessandro Pala - 2107800
